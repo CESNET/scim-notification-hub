@@ -1,77 +1,78 @@
 package core;
 
-import org.json.JSONObject;
+import org.codehaus.jackson.annotate.JsonCreator;
+import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.ObjectReader;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Created by xmauritz on 7/26/16.
+ * Scim Notification Event (SEN) notifies a subscriber of a possible change in state of a
+   resource contained within a specified feed.
+ *
+ * @author Jiri Mauritz
  */
-public class ScimEventNotification {
-    private static final List<String> SCHEMAS = new ArrayList<String>() {{ add("urn:ietf:params:scim:schemas:notify:2.0:Event"); }};
+public class ScimEventNotification implements java.io.Serializable {
+    private static final String SCHEMA = "urn:ietf:params:scim:schemas:notify:2.0:Event";
+    private List<String> schemas;
     private List<String> feedUris;
     private String publisherUri;
     private List<String> resourceUris;
     private ScimEventTypeEnum type;
     private List<String> attributes;
-    private JSONObject values;
+    private Map<String, Object> values;
 
-    // Constructor
-    public ScimEventNotification() {
-        feedUris = new ArrayList<String>();
-        resourceUris = new ArrayList<String>();
-        attributes = new ArrayList<String>();
-        values = new JSONObject();
+    @JsonCreator
+    public ScimEventNotification(
+            @JsonProperty("schemas") final List<String> schemas,
+            @JsonProperty("feedUris") final List<String> feedUris,
+            @JsonProperty("publisherUri") final String publisherUri,
+            @JsonProperty("resourceUris") final List<String> resourceUris,
+            @JsonProperty("type") final String type,
+            @JsonProperty("attributes") final List<String> attributes,
+            @JsonProperty("values") final Map<String, Object> values) {
+        if (!schemas.contains(SCHEMA)) {
+            throw new IllegalArgumentException("Schemas must contain schema: urn:ietf:params:scim:schemas:notify:2.0:Event");
+        }
+        this.schemas = schemas;
+        this.feedUris = feedUris;
+        this.publisherUri = publisherUri;
+        this.resourceUris = resourceUris;
+        this.type = ScimEventTypeEnum.valueOf(type);
+        this.attributes = attributes;
+        this.values = values;
+    }
+
+    public List<String> getSchemas() {
+        return schemas;
     }
 
     public List<String> getFeedUris() {
         return Collections.unmodifiableList(feedUris);
     }
 
-    public void addToFeedUris(String feedUri) {
-        this.feedUris.add(feedUri);
-    }
-
     public String getPublisherUri() {
         return publisherUri;
-    }
-
-    public void setPublisherUri(String publisherUri) {
-        this.publisherUri = publisherUri;
     }
 
     public List<String> getResourceUris() {
         return Collections.unmodifiableList(resourceUris);
     }
 
-    public void addToResourceUris(String resourceUri) {
-        this.resourceUris.add(resourceUri);
-    }
-
     public ScimEventTypeEnum getType() {
         return type;
     }
 
-    public void setType(ScimEventTypeEnum type) {
-        this.type = type;
-    }
-
     public List<String> getAttributes() {
-        return Collections.unmodifiableList(attributes);
+        return attributes;
     }
 
-    public void addToAttributes(String attribute) {
-        this.attributes.add(attribute);
-    }
-
-    public JSONObject getValues() {
+    public Map<String, Object> getValues() {
         return values;
-    }
-
-    public void setValues(JSONObject values) {
-        this.values = values;
     }
 
     @Override
@@ -82,7 +83,7 @@ public class ScimEventNotification {
         ScimEventNotification that = (ScimEventNotification) o;
 
         if (feedUris != null ? !feedUris.equals(that.feedUris) : that.feedUris != null) return false;
-        if (publisherUri != null ? !publisherUri.equals(that.publisherUri) : that.publisherUri != null) return false;
+        if (!publisherUri.equals(that.publisherUri)) return false;
         if (resourceUris != null ? !resourceUris.equals(that.resourceUris) : that.resourceUris != null) return false;
         if (type != that.type) return false;
         if (attributes != null ? !attributes.equals(that.attributes) : that.attributes != null) return false;
@@ -93,9 +94,9 @@ public class ScimEventNotification {
     @Override
     public int hashCode() {
         int result = feedUris != null ? feedUris.hashCode() : 0;
-        result = 31 * result + (publisherUri != null ? publisherUri.hashCode() : 0);
+        result = 31 * result + publisherUri.hashCode();
         result = 31 * result + (resourceUris != null ? resourceUris.hashCode() : 0);
-        result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result + type.hashCode();
         result = 31 * result + (attributes != null ? attributes.hashCode() : 0);
         result = 31 * result + (values != null ? values.hashCode() : 0);
         return result;
@@ -104,7 +105,7 @@ public class ScimEventNotification {
     @Override
     public String toString() {
         return "ScimEventNotification{" +
-                "SCHEMAS=" + SCHEMAS +
+                "schemas=" + schemas +
                 ", feedUris=" + feedUris +
                 ", publisherUri='" + publisherUri + '\'' +
                 ", resourceUris=" + resourceUris +
@@ -112,19 +113,5 @@ public class ScimEventNotification {
                 ", attributes=" + attributes +
                 ", values=" + values +
                 '}';
-    }
-
-    public String toJson() {
-        JSONObject sen = new JSONObject();
-
-        sen.put("schemas", SCHEMAS);
-        sen.put("feedUris", feedUris);
-        sen.put("publisherUri", publisherUri);
-        sen.put("resourceUri", resourceUris);
-        sen.put("type", type.name());
-        sen.put("attributes", attributes);
-        sen.put("values", values);
-
-        return sen.toString();
     }
 }

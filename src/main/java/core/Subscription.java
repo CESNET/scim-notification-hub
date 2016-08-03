@@ -2,7 +2,7 @@ package core;
 
 /**
  * Subscriptions are made by the subscriber as a request to the Notification Hub.
- * The subscriber is connected to the defined feed for notifications.
+ * The subscriber is connected to specified feed to receive notifications.
  * The subscriptions are usually created by accessing "/Subscriptions" endpoint.
  *
  * @author Jiri Mauritz

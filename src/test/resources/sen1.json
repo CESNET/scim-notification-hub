@@ -1,0 +1,36 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:notify:2.0:Event"
+  ],
+  "publisherUri": "https://perun.cesnet.cz",
+  "feedUris": [
+    "https://perun.cesnet.cz/scim-notification/storage-fi.ics.muni.cz/mailman",
+    "https://perun.cesnet.cz/scim-notification/eduroam/eduroam_radius"
+  ],
+  "resourceUris": [
+    "https://perun.cesnet.cz/api/v2/Users/3104"
+  ],
+  "type": "CREATE",
+  "attributes": [
+    "id",
+    "name",
+    "userName",
+    "password",
+    "emails"
+  ],
+  "values": {
+    "emails": [
+      {
+        "type": "work",
+        "value": "jdoe@example.com"
+      }
+    ],
+    "password": "not4u2no",
+    "userName": "jdoe",
+    "id": "44f6142df96bd6ab61e7521d9",
+    "name": {
+      "givenName": "John",
+      "familyName": "Doe"
+    }
+  }
+}
