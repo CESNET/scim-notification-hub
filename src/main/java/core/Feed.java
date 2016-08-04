@@ -71,7 +71,7 @@ public class Feed {
             this.messages.addFirst(sen);
         }
         // send to all, who have set CALLBACK
-        return callbackSubscribers;
+        return Collections.unmodifiableSet(callbackSubscribers);
     }
 
     /**
@@ -110,9 +110,10 @@ public class Feed {
             // poll subscriber
             this.pollSubscribersLastMsg.put(subscriber, null);
             this.slowestPollSubscriber = subscriber;
-        } else
+        } else {
             // webCallback subscriber
             this.callbackSubscribers.add(subscriber);
+        }
     }
 
     /**

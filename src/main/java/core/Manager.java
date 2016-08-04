@@ -1,23 +1,13 @@
 package core;
 
-import org.codehaus.jackson.map.ObjectMapper;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
- * Manager controls the notification hub and keeps all the feeds.
+ * Manager controls the notification hub and represents the only endpoint to the core of the hub.
  *
  * @author Jiri Mauritz
  */
-public class Manager {
-
-    Map<String, Feed> feeds = new HashMap<String, Feed>();
-    Map<String, Subscriber> subscribers = new HashMap<String, Subscriber>();
-
+public interface Manager {
 
     /**
      * Add new message to the feeds specified in the message.
@@ -26,88 +16,51 @@ public class Manager {
      * <a>https://tools.ietf.org/html/draft-hunt-scim-notify-00#section-3</a>.
      *
      * @param json scim notification event in json format
+     * @throws IllegalArgumentException if the json in null or not valid
      */
-    public void newMessage(String json) {
-        if (json == null) throw new IllegalArgumentException("Json cannot be null.");
-        // String -> JSON
-        ObjectMapper mapper = new ObjectMapper();
-        ScimEventNotification sen = null;
-        try {
-            sen = mapper.readValue(json, ScimEventNotification.class);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Invalid JSON.");
-        }
-        // classify the sen into right feeds
-        Set<Subscriber> subscribersToBeNotified = new HashSet<Subscriber>();
-        for (String feedUri : sen.getFeedUris()) {
-            Feed feed = feeds.get(feedUri);
-            if (feed == null) {
-                // create new feed
-                feed = new Feed(feedUri);
-                feeds.put(feedUri, feed);
-            }
-            subscribersToBeNotified.addAll(feed.newMsg(sen));
-        }
-        webCallbackSend(subscribersToBeNotified, sen);
-    }
+    public void newMessage(String json);
 
-    public void newSubscription(String subscriberId, String feedUri, SubscriptionModeEnum mode, String eventUri) {
-        if (subscriberId == null) throw new IllegalArgumentException("SubscriberId cannot be null.");
-        if (feedUri == null) throw new IllegalArgumentException("FeedUri cannot be null.");
-        if (mode == null) throw new IllegalArgumentException("Mode cannot be null.");
-        if (eventUri == null) throw new IllegalArgumentException("EventUri cannot be null.");
+    /**
+     * Creates new subscription of the subscriber to the feed with the given mode.
+     * If the subscriber or the feed do not exist, they are created.
+     *
+     * @param subscriberId identificator of the subscriber
+     * @param feedUri uri of the feed
+     * @param mode mode of the subscription (web callback / poll)
+     * @param eventUri uri for notification
+     *
+     * @throws IllegalArgumentException if the subscription already exists
+     */
+    public void newSubscription(String subscriberId, String feedUri, SubscriptionModeEnum mode, String eventUri);
 
-        // get subscriber
-        Subscriber subscriber = subscribers.get(subscriberId);
-        if (subscriber == null) {
-            // create new subscriber
-            subscriber = new Subscriber(subscriberId);
-            subscribers.put(subscriberId, subscriber);
-        }
+    /**
+     * Subscription is removed from specified feed by calling this method.
+     * If the subscriber or feed does not exists, returns false.
+     *
+     * @param subscriberId id of the subscriber
+     * @param feedUri uri of the feed
+     *
+     * @return true if the subscription was removed
+     */
+    public boolean removeSubscription(String subscriberId, String feedUri);
 
-        // create subscription
-        Subscription subscription = new Subscription(feedUri, mode, eventUri);
-        subscriber.addSubscription(subscription);
+    /**
+     * Removes subscriber and all his subscriptions in feeds.
+     * If the subscriber is not subscribed anywhere, returns false.
+     *
+     * @param subscriberId id of the subscriber
+     *
+     * @return true if the subscriber was removed
+     */
+    public boolean removeSubscriber(String subscriberId);
 
-        // add to feed
-        Feed feed = feeds.get(feedUri);
-        if (feed == null) {
-            // create new feed
-            feed = new Feed(feedUri);
-            feeds.put(feedUri, feed);
-        }
-        feed.addSubscriber(subscriber);
-    }
-
-    public void removeSubscription(String subscriberId, String feedUri) {
-        if (subscriberId == null) throw new IllegalArgumentException("SubscriberId cannot be null.");
-        if (feedUri == null) throw new IllegalArgumentException("FeedUri cannot be null.");
-        Subscriber subscriber = subscribers.get(subscriberId);
-        subscriber.removeSubscription(feedUri);
-        feeds.get(feedUri).removeSubscriber(subscriber);
-    }
-
-    public void removeSubscriber(String subscriberId) {
-        if (subscriberId == null) throw new IllegalArgumentException("SubscriberId cannot be null.");
-        Subscriber subscriber = subscribers.get(subscriberId);
-        for (Subscription subscription : subscriber.getSubscriptions()) {
-            feeds.get(subscription.getFeedUri()).removeSubscriber(subscriber);
-        }
-        subscribers.remove(subscriber);
-    }
-
-    public void webCallbackSend(Set<Subscriber> subscribers, ScimEventNotification sen) {
-        // TODO - initiate send of the sen message to all the subscribers
-    }
-
-    public Set<ScimEventNotification> poll(String subscriberId) {
-        if (subscriberId == null) throw new IllegalArgumentException("SubscriberId cannot be null.");
-        Subscriber subscriber = subscribers.get(subscriberId);
-        Set<ScimEventNotification> msgsToSend = new HashSet<ScimEventNotification>();
-        for (Subscription subscription : subscriber.getSubscriptions()) {
-            msgsToSend.addAll(feeds.get(subscription.getFeedUri()).poll(subscriber));
-        }
-        return msgsToSend;
-    }
-
+    /**
+     * Polling of the scim notification events looks into each subscriber's feed
+     * and return collection of all new messages from all feeds.
+     *
+     * @param subscriberId id of the subscriber
+     *
+     * @return set of all new messages to be send to the subscriber
+     */
+    public Set<ScimEventNotification> poll(String subscriberId);
 }
