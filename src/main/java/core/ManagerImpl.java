@@ -83,6 +83,7 @@ public class ManagerImpl implements Manager {
             }
             return true;
         }
+        // TODO: delete feed, if there is no subscriber
         return false;
     }
 
@@ -93,6 +94,7 @@ public class ManagerImpl implements Manager {
         for (Subscription subscription : subscriber.getSubscriptions()) {
             feeds.get(subscription.getFeedUri()).removeSubscriber(subscriber);
         }
+        // TODO: delete feed, if there is no subscriber
         subscribers.remove(subscriber);
         return true;
     }

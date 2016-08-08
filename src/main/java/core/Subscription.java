@@ -23,24 +23,12 @@ public class Subscription {
         return feedUri;
     }
 
-    public void setFeedUri(String feedUri) {
-        this.feedUri = feedUri;
-    }
-
     public SubscriptionModeEnum getMode() {
         return mode;
     }
 
-    public void setMode(SubscriptionModeEnum mode) {
-        this.mode = mode;
-    }
-
     public String getEventUri() {
         return eventUri;
-    }
-
-    public void setEventUri(String eventUri) {
-        this.eventUri = eventUri;
     }
 
     @Override
