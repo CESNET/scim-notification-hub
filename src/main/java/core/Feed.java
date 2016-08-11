@@ -10,6 +10,8 @@ import java.util.*;
  */
 public class Feed {
 
+    private Long id;
+
     // uri of the feed, subscribers access the uri to poll the messages
     private String uri;
 
@@ -32,11 +34,20 @@ public class Feed {
      */
     public Feed(String uri) {
         if (uri == null) throw new NullPointerException("Uri cannot be null.");
+        this.id = null;
         this.uri = uri;
         this.messages = new LinkedList<ScimEventNotification>();
         this.callbackSubscribers = new HashSet<Subscriber>();
         this.pollSubscribersLastMsg = new HashMap<Subscriber, ScimEventNotification>();
         this.slowestPollSubscriber = null;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     /**

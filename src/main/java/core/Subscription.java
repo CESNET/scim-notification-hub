@@ -8,15 +8,25 @@ package core;
  * @author Jiri Mauritz
  */
 public class Subscription {
+    private Long id;
     private String feedUri;
     private SubscriptionModeEnum mode;
     private String eventUri;
     //TODO: Jwt, pollInterval and state
 
     public Subscription(String feedUri, SubscriptionModeEnum mode, String eventUri) {
+        this.id = null;
         this.feedUri = feedUri;
         this.mode = mode;
         this.eventUri = eventUri;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getFeedUri() {

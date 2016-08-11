@@ -18,6 +18,7 @@ import java.util.Map;
  */
 public class ScimEventNotification implements java.io.Serializable {
     private static final String SCHEMA = "urn:ietf:params:scim:schemas:notify:2.0:Event";
+    private Long id;
     private List<String> schemas;
     private List<String> feedUris;
     private String publisherUri;
@@ -38,6 +39,7 @@ public class ScimEventNotification implements java.io.Serializable {
         if (!schemas.contains(SCHEMA)) {
             throw new IllegalArgumentException("Schemas must contain schema: urn:ietf:params:scim:schemas:notify:2.0:Event");
         }
+        this.id = null;
         this.schemas = schemas;
         this.feedUris = feedUris;
         this.publisherUri = publisherUri;
@@ -45,6 +47,14 @@ public class ScimEventNotification implements java.io.Serializable {
         this.type = ScimEventTypeEnum.valueOf(type);
         this.attributes = attributes;
         this.values = values;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public List<String> getSchemas() {

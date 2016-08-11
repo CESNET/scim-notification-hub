@@ -1,5 +1,7 @@
 package config;
 
+import dao.SubscriberDao;
+import daoImpl.SubscriberDaoImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -19,8 +21,9 @@ import javax.sql.DataSource;
 @EnableTransactionManagement
 @PropertySource("classpath:dataSource.properties")
 @ComponentScan(basePackages = {
-        "dao"
-    })
+        "core",
+        "daoImpl"
+})
 public class SpringConfig {
 
     @Inject

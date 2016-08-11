@@ -1,5 +1,6 @@
-package config;
+package daoImpl;
 
+import config.SpringConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -13,7 +14,7 @@ import javax.sql.DataSource;
  */
 @Configuration
 @Import(SpringConfig.class)
-public class TestConfig {
+public class DaoTestConfig {
 
     @Bean
     public DataSource dataSource() {

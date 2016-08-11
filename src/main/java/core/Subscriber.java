@@ -1,5 +1,9 @@
 package core;
 
+import dao.SubscriberDao;
+
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -12,16 +16,30 @@ import java.util.Set;
  * @author Jiri Mauritz
  */
 public class Subscriber {
+    private Long id;
     private String identifier;
     private Set<Subscription> subscriptions;
 
     public Subscriber(String identifier) {
+        this.id = null;
         this.identifier = identifier;
         this.subscriptions = new HashSet<Subscription>();
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getIdentifier() {
         return identifier;
+    }
+
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
     }
 
     /**
@@ -63,6 +81,10 @@ public class Subscriber {
         }
         if (subscription == null) return false;
         return subscriptions.remove(subscription);
+    }
+
+    public void setSubscriptions(Set<Subscription> subscriptions) {
+        this.subscriptions = subscriptions;
     }
 
     @Override
