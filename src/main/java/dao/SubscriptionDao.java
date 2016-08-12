@@ -17,8 +17,9 @@ public interface SubscriptionDao {
      * @param subscription to be created
      * @param subscriber   owner of the subscription
      * @param feed         to which the subscription belongs
+     * @param lastSeenMsg  id of the msg that was last seen by poll subscriber in the feed (null for webCallback subscriber)
      */
-    public void create(Subscription subscription, Subscriber subscriber, Feed feed);
+    public void create(Subscription subscription, Subscriber subscriber, Feed feed, Long lastSeenMsg);
 
     /**
      * Remove a new subscription.

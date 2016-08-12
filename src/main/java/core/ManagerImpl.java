@@ -96,7 +96,7 @@ public class ManagerImpl implements Manager {
             feedDao.create(feed);
         }
         feed.addSubscriber(subscriber);
-        subscriptionDao.create(subscription, subscriber, feed);
+        subscriptionDao.create(subscription, subscriber, feed, null);
     }
 
     public boolean removeSubscription(String subscriberIdentifier, String feedUri) {

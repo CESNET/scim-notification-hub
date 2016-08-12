@@ -36,13 +36,13 @@ public class SubscriptionDaoImpl implements SubscriptionDao {
     static final class SubscriptionMapper implements RowMapper<Subscription> {
         public Subscription mapRow(ResultSet rs, int rowNum) throws SQLException {
             return new Subscription(
-                    rs.getString("feed.uri"),
+                    rs.getString("uri"),
                     SubscriptionModeEnum.valueOf(rs.getString("mode")),
                     rs.getString("eventUri"));
         }
     }
 
-    public void create(Subscription subscription, Subscriber subscriber, Feed feed) {
+    public void create(Subscription subscription, Subscriber subscriber, Feed feed, Long lastSeenMsg) {
         if (subscription == null) throw new NullPointerException("Subscription cannot be null.");
         if (subscriber == null) throw new NullPointerException("Subscriber cannot be null.");
         if (feed == null) throw new NullPointerException("Feed cannot be null.");
@@ -53,6 +53,7 @@ public class SubscriptionDaoImpl implements SubscriptionDao {
         params.put("eventUri", subscription.getEventUri());
         params.put("subscriberId", subscriber.getId());
         params.put("feedId", feed.getId());
+        params.put("lastSeenMsg", lastSeenMsg);
         SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName(TABLE_NAME).usingGeneratedKeyColumns("id");
         Number id = jdbcInsert.executeAndReturnKey(params);
         subscription.setId(id.longValue());
@@ -62,8 +63,8 @@ public class SubscriptionDaoImpl implements SubscriptionDao {
         if (subscriberIdentifier == null) throw new NullPointerException("SubscriberIdentifier cannot be null.");
         if (feedUri == null) throw new IllegalStateException("FeedUri cannot be null.");
         String SQL = "DELETE FROM " + TABLE_NAME + " WHERE subscriberId=(SELECT id FROM subscriber WHERE identifier=" +
-                subscriberIdentifier + ") AND feedId=(SELECT id FROM feed WHERE feedUri=" + feedUri + ")";
-        int rows = jdbcTemplate.update(SQL);
+                "?) AND feedId=(SELECT id FROM feed WHERE uri=?)";
+        int rows = jdbcTemplate.update(SQL, subscriberIdentifier, feedUri);
         if (rows > 1) throw new IllegalStateException("More than one subscription removed.");
     }
 

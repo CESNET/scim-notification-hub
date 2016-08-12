@@ -44,7 +44,8 @@ public interface FeedDao {
     public void storeState(Feed feed);
 
     /**
-     * Create a new feed.
+     * Create a new feed without subscribers and messages.
+     * For storing subscribers and messages, use storeState().
      *
      * @param feed to be created
      */

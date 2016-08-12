@@ -12,7 +12,7 @@ public class Feed {
 
     private Long id;
 
-    // uri of the feed, subscribers access the uri to poll the messages
+    // uri of the feed, subscribers access the uri to poll the messages, must be unique
     private String uri;
 
     // queue of messages accessible from the beginning for adding and from the end for removing
@@ -66,6 +66,10 @@ public class Feed {
      */
     public List<ScimEventNotification> getMessages() {
         return Collections.unmodifiableList(messages);
+    }
+
+    public void setMessages(LinkedList<ScimEventNotification> messages) {
+        this.messages = messages;
     }
 
     /**
@@ -144,6 +148,14 @@ public class Feed {
             return true;
         }
         return false;
+    }
+
+    public Map<Subscriber, ScimEventNotification> getPollSubscribersLastMsg() {
+        return pollSubscribersLastMsg;
+    }
+
+    public void setPollSubscribersLastMsg(Map<Subscriber, ScimEventNotification> pollSubscribersLastMsg) {
+        this.pollSubscribersLastMsg = pollSubscribersLastMsg;
     }
 
     /**

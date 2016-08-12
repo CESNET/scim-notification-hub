@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
@@ -74,7 +75,7 @@ public class SubscriberDaoImplTest {
     }
 
     @Test
-    public void createSubscriberTest() throws Exception {
+    public void createTest() throws Exception {
         Subscriber subscriber = new Subscriber(SBSC_ID);
         subscriberDao.create(subscriber);
         assertNotNull(subscriber.getId());
@@ -83,8 +84,18 @@ public class SubscriberDaoImplTest {
         assertEquals(subscriber, returned);
     }
 
+    @Test(expected = EmptyResultDataAccessException.class)
+    public void removeTest() throws Exception {
+        Subscriber subscriber = new Subscriber(SBSC_ID);
+        createSubscriberInDb(subscriber);
+        assertNotNull(getByIdFromDb(subscriber.getId()));
+        subscriberDao.remove(subscriber);
 
-    /* ========= PRIVATE METHODS ================== */
+        // throw exception due to no such subscriber in db
+        getByIdFromDb(subscriber.getId());
+    }
+
+   /* ========= PRIVATE METHODS ================== */
 
     private void createSubscriberInDb(Subscriber subscriber) {
         Map<String, Object> params = new HashMap<String, Object>();

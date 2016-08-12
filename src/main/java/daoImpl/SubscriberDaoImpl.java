@@ -33,9 +33,6 @@ public class SubscriberDaoImpl implements SubscriberDao {
     @Inject
     private JdbcTemplate jdbcTemplate;
 
-    @Inject
-    private SubscriptionDao subscriptionDao;
-
     // Row Mapper for the subscriber object
     private static final class SubsciberMapper implements RowMapper<Subscriber> {
         public Subscriber mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -47,7 +44,7 @@ public class SubscriberDaoImpl implements SubscriberDao {
 
     public void update(Map<String, Subscriber> subscribers) {
         try {
-            if (subscribers == null) throw new IllegalStateException("Subscribers cannot be null .");
+            if (subscribers == null) throw new NullPointerException("Subscribers cannot be null .");
             subscribers.clear();
             for (Subscriber subscriber : getAll()) {
                 subscribers.put(subscriber.getIdentifier(), subscriber);
@@ -70,8 +67,8 @@ public class SubscriberDaoImpl implements SubscriberDao {
     public void remove(Subscriber subscriber) {
         if (subscriber == null) throw new NullPointerException("Subscriber cannot be null.");
         if (subscriber.getId() == null) throw new IllegalStateException("Subscriber is not stored.");
-        String SQL = "DELETE FROM " + TABLE_NAME + " WHERE id=" + subscriber.getId();
-        int rows = jdbcTemplate.update(SQL);
+        String SQL = "DELETE FROM " + TABLE_NAME + " WHERE id=?";
+        int rows = jdbcTemplate.update(SQL, subscriber.getId());
         if (rows > 1) throw new IllegalStateException("More than one subscriber removed.");
     }
 
@@ -82,8 +79,9 @@ public class SubscriberDaoImpl implements SubscriberDao {
         // add subscriptions
         for (Subscriber subscriber : subscribers) {
             SQL = "SELECT " + SubscriptionDaoImpl.FIELDS + " FROM " + SubscriptionDaoImpl.TABLE_NAME + " JOIN feed ON "
-                    + SubscriptionDaoImpl.TABLE_NAME + ".feedId=feed.id WHERE subscriberId=" + subscriber.getId();
-            subscriber.setSubscriptions(new HashSet<Subscription>(jdbcTemplate.query(SQL, new SubscriptionDaoImpl.SubscriptionMapper())));
+                    + SubscriptionDaoImpl.TABLE_NAME + ".feedId=feed.id WHERE subscriberId=?";
+            subscriber.setSubscriptions(new HashSet<Subscription>(
+                    jdbcTemplate.query(SQL, new SubscriptionDaoImpl.SubscriptionMapper(), subscriber.getId())));
         }
         return subscribers;
     }

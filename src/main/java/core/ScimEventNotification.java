@@ -2,10 +2,7 @@ package core;
 
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectReader;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +14,7 @@ import java.util.Map;
  * @author Jiri Mauritz
  */
 public class ScimEventNotification implements java.io.Serializable {
-    private static final String SCHEMA = "urn:ietf:params:scim:schemas:notify:2.0:Event";
+    public static final String EVENT_SCHEMA = "urn:ietf:params:scim:schemas:notify:2.0:Event";
     private Long id;
     private List<String> schemas;
     private List<String> feedUris;
@@ -36,7 +33,7 @@ public class ScimEventNotification implements java.io.Serializable {
             @JsonProperty("type") final String type,
             @JsonProperty("attributes") final List<String> attributes,
             @JsonProperty("values") final Map<String, Object> values) {
-        if (!schemas.contains(SCHEMA)) {
+        if (!schemas.contains(EVENT_SCHEMA)) {
             throw new IllegalArgumentException("Schemas must contain schema: urn:ietf:params:scim:schemas:notify:2.0:Event");
         }
         this.id = null;
