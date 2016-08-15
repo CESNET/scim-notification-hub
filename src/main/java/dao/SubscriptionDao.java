@@ -22,10 +22,25 @@ public interface SubscriptionDao {
     public void create(Subscription subscription, Subscriber subscriber, Feed feed, Long lastSeenMsg);
 
     /**
-     * Remove a new subscription.
+     * Remove a subscription according to its subscriber and feed.
      *
      * @param subscriberIdentifier who owns the subscription
      * @param feedUri              of the subscription
      */
     public void remove(String subscriberIdentifier, String feedUri);
+
+    /**
+     * Remove a subscription according to its id.
+     *
+     * @param id of the subscription
+     */
+    public void remove(Long id);
+
+    /**
+     * Retrieve all ids of the subscriptions that belong to the specified subscriber.
+     *
+     * @param subscriber owner of the subscriptions
+     * @return set of all subscription ids
+     */
+    public Set<Long> getAllIdsForSubscriber(Subscriber subscriber);
 }

@@ -1,6 +1,7 @@
 package dao;
 
 import core.Feed;
+import core.ScimEventNotification;
 import core.Subscriber;
 
 import java.util.Map;
@@ -31,4 +32,20 @@ public interface SubscriberDao {
      * @param subscriber to be removed
      */
     public void remove(Subscriber subscriber);
+
+    /**
+     * Retrieve all poll subscribers and their last seen message for the specified feed.
+     *
+     * @param feed where the subscribers are subscribed
+     * @return poll subscribers and their last seen message for feed
+     */
+    public Map<Subscriber, ScimEventNotification> getPollSubscribers(Feed feed);
+
+    /**
+     * Retrieve all webCallback subscribers for the specified feed.
+     *
+     * @param feed where the subscribers are subscribed
+     * @return all webCallback subscribers for feed
+     */
+    public Set<Subscriber> getWebCallbackSubscribers(Feed feed);
 }

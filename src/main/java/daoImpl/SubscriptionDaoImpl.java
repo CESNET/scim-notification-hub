@@ -61,18 +61,24 @@ public class SubscriptionDaoImpl implements SubscriptionDao {
 
     public void remove(String subscriberIdentifier, String feedUri) {
         if (subscriberIdentifier == null) throw new NullPointerException("SubscriberIdentifier cannot be null.");
-        if (feedUri == null) throw new IllegalStateException("FeedUri cannot be null.");
+        if (feedUri == null) throw new NullPointerException("FeedUri cannot be null.");
         String SQL = "DELETE FROM " + TABLE_NAME + " WHERE subscriberId=(SELECT id FROM subscriber WHERE identifier=" +
                 "?) AND feedId=(SELECT id FROM feed WHERE uri=?)";
         int rows = jdbcTemplate.update(SQL, subscriberIdentifier, feedUri);
         if (rows > 1) throw new IllegalStateException("More than one subscription removed.");
     }
 
-//    public Set<Subscription> getAllForFeed(Feed feed) {
-//        if (feed == null) throw new NullPointerException("Feed cannot be null.");
-//        if (feed.getId() == null) throw new IllegalStateException("Feed is not stored yet.");
-//        String SQL = "SELECT " + FIELDS + " FROM " + TABLE_NAME + " WHERE feedId=" + feed.getId();
-//        return new HashSet<Subscription>(jdbcTemplate.query(SQL, new SubscriptionMapper()));
-//    }
+    public void remove(Long id) {
+        if (id == null) throw new NullPointerException("Id if the subscriber cannot be null.");
+        String SQL = "DELETE FROM " + TABLE_NAME + " WHERE id=?";
+        jdbcTemplate.update(SQL, id);
+    }
+
+    public Set<Long> getAllIdsForSubscriber(Subscriber subscriber) {
+        if (subscriber == null) throw new NullPointerException("Subscriber cannot be null.");
+        if (subscriber.getId() == null) throw new IllegalStateException("Subscriber is not stored yet.");
+        String SQL = "SELECT id FROM " + TABLE_NAME + " WHERE subscriberId=?";
+        return new HashSet<Long>(jdbcTemplate.queryForList(SQL, Long.class, subscriber.getId()));
+    }
 
 }

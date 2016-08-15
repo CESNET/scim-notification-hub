@@ -34,7 +34,7 @@ public class ScimEventNotification implements java.io.Serializable {
             @JsonProperty("attributes") final List<String> attributes,
             @JsonProperty("values") final Map<String, Object> values) {
         if (!schemas.contains(EVENT_SCHEMA)) {
-            throw new IllegalArgumentException("Schemas must contain schema: urn:ietf:params:scim:schemas:notify:2.0:Event");
+            throw new IllegalArgumentException("Schemas must contain schema: '" + EVENT_SCHEMA + "'.");
         }
         this.id = null;
         this.schemas = schemas;
@@ -89,21 +89,24 @@ public class ScimEventNotification implements java.io.Serializable {
 
         ScimEventNotification that = (ScimEventNotification) o;
 
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (schemas != null ? !schemas.equals(that.schemas) : that.schemas != null) return false;
         if (feedUris != null ? !feedUris.equals(that.feedUris) : that.feedUris != null) return false;
-        if (!publisherUri.equals(that.publisherUri)) return false;
+        if (publisherUri != null ? !publisherUri.equals(that.publisherUri) : that.publisherUri != null) return false;
         if (resourceUris != null ? !resourceUris.equals(that.resourceUris) : that.resourceUris != null) return false;
         if (type != that.type) return false;
         if (attributes != null ? !attributes.equals(that.attributes) : that.attributes != null) return false;
         return values != null ? values.equals(that.values) : that.values == null;
-
     }
 
     @Override
     public int hashCode() {
-        int result = feedUris != null ? feedUris.hashCode() : 0;
-        result = 31 * result + publisherUri.hashCode();
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (schemas != null ? schemas.hashCode() : 0);
+        result = 31 * result + (feedUris != null ? feedUris.hashCode() : 0);
+        result = 31 * result + (publisherUri != null ? publisherUri.hashCode() : 0);
         result = 31 * result + (resourceUris != null ? resourceUris.hashCode() : 0);
-        result = 31 * result + type.hashCode();
+        result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + (attributes != null ? attributes.hashCode() : 0);
         result = 31 * result + (values != null ? values.hashCode() : 0);
         return result;

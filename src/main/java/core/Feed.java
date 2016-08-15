@@ -150,12 +150,28 @@ public class Feed {
         return false;
     }
 
+    public Set<Subscriber> getCallbackSubscribers() {
+        return callbackSubscribers;
+    }
+
+    public void setCallbackSubscribers(Set<Subscriber> callbackSubscribers) {
+        this.callbackSubscribers = callbackSubscribers;
+    }
+
     public Map<Subscriber, ScimEventNotification> getPollSubscribersLastMsg() {
         return pollSubscribersLastMsg;
     }
 
     public void setPollSubscribersLastMsg(Map<Subscriber, ScimEventNotification> pollSubscribersLastMsg) {
         this.pollSubscribersLastMsg = pollSubscribersLastMsg;
+    }
+
+    public Subscriber getSlowestPollSubscriber() {
+        return slowestPollSubscriber;
+    }
+
+    public void setSlowestPollSubscriber(Subscriber slowestPollSubscriber) {
+        this.slowestPollSubscriber = slowestPollSubscriber;
     }
 
     /**

@@ -1,6 +1,6 @@
 CREATE TABLE subscriber (
   id         BIGINT       NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  identifier VARCHAR(512) NOT NULL
+  identifier VARCHAR(512) NOT NULL UNIQUE
 );
 
 CREATE TABLE feed (
@@ -21,28 +21,28 @@ CREATE TABLE subscription (
   mode         VARCHAR(64)   NOT NULL,
   eventUri     VARCHAR(2083) NOT NULL,
   lastSeenMsg  BIGINT REFERENCES scim_event_notification (id),
-  subscriberId BIGINT        NOT NULL REFERENCES subscriber (id),
-  feedId       BIGINT        NOT NULL REFERENCES feed (id)
+  subscriberId BIGINT        NOT NULL REFERENCES subscriber (id) ON DELETE CASCADE,
+  feedId       BIGINT        NOT NULL REFERENCES feed (id) ON DELETE CASCADE
 );
 
 CREATE TABLE feed_sen (
-  feedId  BIGINT NOT NULL REFERENCES feed (id),
-  senId   BIGINT NOT NULL REFERENCES scim_event_notification (id),
-  nextMsg BIGINT REFERENCES scim_event_notification (id),
+  feedId    BIGINT NOT NULL REFERENCES feed (id),
+  senId     BIGINT NOT NULL REFERENCES scim_event_notification (id),
+  prevMsgId BIGINT REFERENCES scim_event_notification (id),
   PRIMARY KEY (feedId, senId)
 );
 
 CREATE TABLE sen_attribute (
   name  VARCHAR(512) NOT NULL,
-  senId BIGINT       NOT NULL REFERENCES scim_event_notification (id)
+  senId BIGINT       NOT NULL REFERENCES scim_event_notification (id) ON DELETE CASCADE
 );
 
 CREATE TABLE sen_resource_uri (
   uri   VARCHAR(512) NOT NULL,
-  senId BIGINT       NOT NULL REFERENCES scim_event_notification (id)
+  senId BIGINT       NOT NULL REFERENCES scim_event_notification (id) ON DELETE CASCADE
 );
 
 CREATE TABLE sen_schema (
   name  VARCHAR(512) NOT NULL,
-  senId BIGINT       NOT NULL REFERENCES scim_event_notification (id)
+  senId BIGINT       NOT NULL REFERENCES scim_event_notification (id) ON DELETE CASCADE
 );
