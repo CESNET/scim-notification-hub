@@ -1,6 +1,7 @@
 package daoImpl;
 
-import core.*;
+import core.Feed;
+import core.ScimEventNotification;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Before;
@@ -9,7 +10,6 @@ import org.junit.runner.RunWith;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.test.context.ContextConfiguration;
@@ -42,10 +42,13 @@ public class ScimEventNotificationDaoImplTest {
     private JdbcTemplate jdbcTemplate;
 
     @Inject
+    private DaoTestUtils testUtils;
+
+    @Inject
     private ScimEventNotificationDaoImpl senDao;
 
     private static final String URImail = "https://perun.cesnet.cz/scim-notification/storage-fi.ics.muni.cz/mailman";
-    public static final String URIedu = "https://perun.cesnet.cz/scim-notification/eduroam/eduroam_radius";
+    private static final String URIedu = "https://perun.cesnet.cz/scim-notification/eduroam/eduroam_radius";
     private static final String[] FILE_NAMES = new String[]{"sen1.json", "sen2.json", "sen3.json"};
 
     private List<ScimEventNotification> sens = new ArrayList<ScimEventNotification>();
@@ -67,7 +70,7 @@ public class ScimEventNotificationDaoImplTest {
         }
 
         // prepare data
-        createFeedInDb(feed);
+        testUtils.createFeedInDb(feed);
     }
 
     @After
@@ -78,7 +81,7 @@ public class ScimEventNotificationDaoImplTest {
 
     @Test
     public void storeSenTest() throws Exception {
-        createFeedInDb(feedEdu);
+        testUtils.createFeedInDb(feedEdu);
         senDao.storeSen(sens.get(1), feed.getId(), null);
         assertNotNull(sens.get(1).getId());
         senDao.storeSen(sens.get(0), feed.getId(), sens.get(1).getId());
@@ -93,17 +96,17 @@ public class ScimEventNotificationDaoImplTest {
 
     @Test(expected = IllegalStateException.class)
     public void removeSenTest() throws Exception {
-        createSenInDb(sens.get(0), feed.getId(), null);
+        testUtils.createSenInDb(sens.get(0), feed.getId(), null);
         senDao.removeSen(sens.get(0).getId());
         getById(sens.get(0).getId());
     }
 
     @Test
     public void getIdsForFeedTest() throws Exception {
-        createFeedInDb(feedEdu);
-        createSenInDb(sens.get(0), feed.getId(), null);
-        createSenInDb(sens.get(1), feed.getId(), null);
-        createSenInDb(sens.get(2), feedEdu.getId(), null);
+        testUtils.createFeedInDb(feedEdu);
+        testUtils.createSenInDb(sens.get(0), feed.getId(), null);
+        testUtils.createSenInDb(sens.get(1), feed.getId(), null);
+        testUtils.createSenInDb(sens.get(2), feedEdu.getId(), null);
 
         Set<Long> ids = senDao.getIdsForFeed(feed);
 
@@ -114,10 +117,10 @@ public class ScimEventNotificationDaoImplTest {
 
     @Test
     public void getByIdTest() throws Exception {
-        createFeedInDb(feedEdu);
-        createSenInDb(sens.get(1), feed.getId(), null);
-        createSenInDb(sens.get(0), feed.getId(), null);
-        createSenInDb(sens.get(0), feedEdu.getId(), null);
+        testUtils.createFeedInDb(feedEdu);
+        testUtils.createSenInDb(sens.get(1), feed.getId(), null);
+        testUtils.createSenInDb(sens.get(0), feed.getId(), null);
+        testUtils.createSenInDb(sens.get(0), feedEdu.getId(), null);
 
         ScimEventNotification returned = senDao.getById(sens.get(0).getId());
 
@@ -126,8 +129,8 @@ public class ScimEventNotificationDaoImplTest {
 
     @Test
     public void getMessagePredecessorTest() throws Exception {
-        createSenInDb(sens.get(1), feed.getId(), null);
-        createSenInDb(sens.get(0), feed.getId(), sens.get(1).getId());
+        testUtils.createSenInDb(sens.get(1), feed.getId(), null);
+        testUtils.createSenInDb(sens.get(0), feed.getId(), sens.get(1).getId());
 
         assertEquals(null, senDao.getMessagePredecessor(sens.get(1), feed));
         assertEquals(sens.get(1).getId(), senDao.getMessagePredecessor(sens.get(0), feed));
@@ -184,7 +187,7 @@ public class ScimEventNotificationDaoImplTest {
 
     @Test(expected = NullPointerException.class)
     public void getMessagePredecessorWithNullFeed() throws Exception {
-        createSenInDb(sens.get(0), feed.getId(), null);
+        testUtils.createSenInDb(sens.get(0), feed.getId(), null);
         senDao.getMessagePredecessor(sens.get(0), null);
     }
 
@@ -195,104 +198,11 @@ public class ScimEventNotificationDaoImplTest {
 
     @Test(expected = IllegalStateException.class)
     public void getMessagePredecessorWithNonExistingFeed() throws Exception {
-        createSenInDb(sens.get(0), feed.getId(), null);
+        testUtils.createSenInDb(sens.get(0), feed.getId(), null);
         senDao.getMessagePredecessor(sens.get(0), new Feed("not stored feed"));
     }
 
     /* ========= PRIVATE METHODS ================== */
-
-    private void createSubscriberInDb(Subscriber subscriber) {
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("identifier", subscriber.getIdentifier());
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("subscriber").usingGeneratedKeyColumns("id");
-        Number id = jdbcInsert.executeAndReturnKey(params);
-        subscriber.setId(id.longValue());
-    }
-
-    private void createFeedInDb(Feed feed) {
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("uri", feed.getUri());
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("feed").usingGeneratedKeyColumns("id");
-        Number id = jdbcInsert.executeAndReturnKey(params);
-        feed.setId(id.longValue());
-    }
-
-    private void createSubscriptionInDb(Subscription subscription, Feed feed, Subscriber subscriber, Long lastSeenMsg) {
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("mode", subscription.getMode().name());
-        params.put("eventUri", subscription.getEventUri());
-        params.put("subscriberId", subscriber.getId());
-        params.put("feedId", feed.getId());
-        params.put("lastSeenMsg", lastSeenMsg);
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("subscription").usingGeneratedKeyColumns("id");
-        Number id = jdbcInsert.executeAndReturnKey(params);
-        subscription.setId(id.longValue());
-    }
-
-    private void createSenInDb(ScimEventNotification sen, Long feedId, Long prevMsgId) {
-        if (sen.getId() == null) {
-            // sen is not stored yet
-            storePureSen(sen);
-            // store feed - sen relationship
-            storeFeedSenRelationship(sen, feedId, prevMsgId);
-            // store attributes
-            storeMultipleRowsForSen("sen_attribute", "name", sen.getId(), sen.getAttributes());
-            // store resource uris
-            storeMultipleRowsForSen("sen_resource_uri", "uri", sen.getId(), sen.getResourceUris());
-            // store schemas
-            List<String> schemasToStore = new ArrayList<String>(sen.getSchemas());
-            schemasToStore.remove(ScimEventNotification.EVENT_SCHEMA); // remove the EVENT_SCHEMA, it's in all
-            storeMultipleRowsForSen("sen_schema", "name", sen.getId(), schemasToStore);
-
-        } else {
-            // sen is already stored
-            int records = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM feed_sen WHERE feedId=? AND senId=?", Integer.class, feedId, sen.getId());
-            if (records > 0) {
-                // feed has already record of sen -> just update value
-                String SQL = "UPDATE feed_sen SET prevMsgId=? WHERE feedId=? AND senId=?";
-                jdbcTemplate.update(SQL, prevMsgId, feedId, sen.getId());
-            } else {
-                // feed has no record of sen -> create new
-                storeFeedSenRelationship(sen, feedId, prevMsgId);
-            }
-        }
-    }
-
-    private void storePureSen(ScimEventNotification sen) {
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("publisherUri", sen.getPublisherUri());
-        params.put("type", sen.getType().name());
-        try {
-            params.put("sen_values", mapper.writeValueAsString(sen.getValues()));
-        } catch (IOException e) {
-            throw new IllegalStateException("Error when parsing sen values to plain JSON to store it in DB.", e);
-        }
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("scim_event_notification").usingGeneratedKeyColumns("id");
-        Number id = jdbcInsert.executeAndReturnKey(params);
-        sen.setId(id.longValue());
-    }
-
-    private void storeFeedSenRelationship(ScimEventNotification sen, Long feedId, Long prevMsgId) {
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.clear();
-        params.put("feedId", feedId);
-        params.put("senId", sen.getId());
-        params.put("prevMsgId", prevMsgId);
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("feed_sen");
-        jdbcInsert.execute(params);
-    }
-
-    private void storeMultipleRowsForSen(String tableName, String columnName, Long senId, List<String> values) {
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName(tableName);
-        Map<String, Object> params = new HashMap<String, Object>();
-        for (String value : values) {
-            params.clear();
-            params.put(columnName, value);
-            params.put("senId", senId);
-            jdbcInsert.execute(params);
-        }
-    }
 
     private ScimEventNotification getById(Long id) {
         if (id == null) throw new NullPointerException("Id cannot be null.");
@@ -304,26 +214,26 @@ public class ScimEventNotificationDaoImplTest {
 
         // get schemas
         SQL = "SELECT name FROM sen_schema WHERE senId=?";
-        List<String> schemas = jdbcTemplate.queryForList(SQL, String.class, id);
+        Set<String> schemas = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
         schemas.add(ScimEventNotification.EVENT_SCHEMA);
 
         // get feed uris
         SQL = "SELECT feed.uri FROM feed JOIN feed_sen ON feed.id=feed_sen.feedId WHERE senId=?";
-        List<String> feedUris = jdbcTemplate.queryForList(SQL, String.class, id);
+        Set<String> feedUris = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
 
         // get publisher uri
         String publisherUri = rs.getString("publisherUri");
 
         // get resource uris
         SQL = "SELECT uri FROM sen_resource_uri WHERE senId=?";
-        List<String> resourceUris = jdbcTemplate.queryForList(SQL, String.class, id);
+        Set<String> resourceUris = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
 
         // get type
         String type = rs.getString("type");
 
         // get attributes
         SQL = "SELECT name FROM sen_attribute WHERE senId=?";
-        List<String> attributes = jdbcTemplate.queryForList(SQL, String.class, id);
+        Set<String> attributes = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
 
         // get values
         String json = getStringOutOfClob(rs.getObject("sen_values"));
@@ -355,7 +265,6 @@ public class ScimEventNotificationDaoImplTest {
                 sb.append((char) b);
             }
             br.close();
-            String theName = sb.toString();
         } catch (SQLException e) {
             throw new IllegalStateException("Wrong clob object for sen values.", e);
         } catch (IOException e) {

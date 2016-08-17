@@ -42,7 +42,7 @@ public class SubscriptionDaoImpl implements SubscriptionDao {
         }
     }
 
-    public void create(Subscription subscription, Subscriber subscriber, Feed feed, Long lastSeenMsg) {
+    public void create(Subscription subscription, Subscriber subscriber, Feed feed) {
         if (subscription == null) throw new NullPointerException("Subscription cannot be null.");
         if (subscriber == null) throw new NullPointerException("Subscriber cannot be null.");
         if (feed == null) throw new NullPointerException("Feed cannot be null.");
@@ -53,10 +53,22 @@ public class SubscriptionDaoImpl implements SubscriptionDao {
         params.put("eventUri", subscription.getEventUri());
         params.put("subscriberId", subscriber.getId());
         params.put("feedId", feed.getId());
-        params.put("lastSeenMsg", lastSeenMsg);
+        params.put("lastSeenMsg", null);
         SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName(TABLE_NAME).usingGeneratedKeyColumns("id");
         Number id = jdbcInsert.executeAndReturnKey(params);
         subscription.setId(id.longValue());
+    }
+
+    public void storeLastSeenMsg(Subscription subscription, Long lastSeenMsg) {
+        if (subscription == null) throw new NullPointerException("Subscription cannot be null.");
+        if (lastSeenMsg == null) throw new NullPointerException("Subscription cannot be null.");
+        if (subscription.getId() == null) throw new IllegalStateException("Subscription is not stored yet.");
+        if (subscription.getMode().equals(SubscriptionModeEnum.webCallback)) {
+            throw new IllegalStateException("Subscription must be of poll mode to save last seen msg.");
+        }
+        String SQL = "UPDATE " + TABLE_NAME + " SET lastSeenMsg=? WHERE id=?";
+        jdbcTemplate.update(SQL, lastSeenMsg, subscription.getId());
+
     }
 
     public void remove(String subscriberIdentifier, String feedUri) {
@@ -81,4 +93,10 @@ public class SubscriptionDaoImpl implements SubscriptionDao {
         return new HashSet<Long>(jdbcTemplate.queryForList(SQL, Long.class, subscriber.getId()));
     }
 
+    public Set<Long> getAllIdsForFeed(Feed feed) {
+        if (feed == null) throw new NullPointerException("Feed cannot be null.");
+        if (feed.getId() == null) throw new IllegalStateException("Feed is not stored.");
+        String SQL = "SELECT id FROM " + TABLE_NAME + " WHERE feedId=?";
+        return new HashSet<Long>(jdbcTemplate.queryForList(SQL, Long.class, feed.getId()));
+    }
 }

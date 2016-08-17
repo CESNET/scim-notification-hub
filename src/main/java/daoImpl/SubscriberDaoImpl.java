@@ -74,15 +74,15 @@ public class SubscriberDaoImpl implements SubscriberDao {
     public Map<Subscriber, ScimEventNotification> getPollSubscribers(Feed feed) {
         if (feed == null) throw new NullPointerException("Feed cannot be null.");
         if (feed.getId() == null) throw new IllegalStateException("Feed is not stored yet.");
-        Set<Subscriber> subscribers = getAllForFeed(feed);
+        Set<Subscriber> subscribers = getAllForFeedWithMode(feed, SubscriptionModeEnum.poll);
         Map<Subscriber, ScimEventNotification> pollSubscribers = new HashMap<Subscriber, ScimEventNotification>();
         // add last seen msgs
         ScimEventNotification lastSeenMsg;
-        String SQL = "SELECT lastSeenMsg FROM subscription WHERE subscriberId=?";
+        String SQL = "SELECT lastSeenMsg FROM subscription WHERE subscriberId=? AND feedId=?";
         for (Subscriber subscriber : subscribers) {
             if (typeOfSubscriber(subscriber, feed).equals(SubscriptionModeEnum.poll)) {
                 // only if the subscriber has poll mode
-                Long senId = jdbcTemplate.queryForObject(SQL, Long.class, subscriber.getId());
+                Long senId = jdbcTemplate.queryForObject(SQL, Long.class, subscriber.getId(), feed.getId());
                 lastSeenMsg = senId == null ? null : senDao.getById(senId);
                 pollSubscribers.put(subscriber, lastSeenMsg);
             }
@@ -93,7 +93,7 @@ public class SubscriberDaoImpl implements SubscriberDao {
     public Set<Subscriber> getWebCallbackSubscribers(Feed feed) {
         if (feed == null) throw new NullPointerException("Feed cannot be null.");
         if (feed.getId() == null) throw new IllegalStateException("Feed is not stored yet.");
-        Set<Subscriber> subscribers = getAllForFeed(feed);
+            Set<Subscriber> subscribers = getAllForFeedWithMode(feed, SubscriptionModeEnum.webCallback);
 
         // remove all poll subscribers
         Iterator iter = subscribers.iterator();
@@ -120,10 +120,10 @@ public class SubscriberDaoImpl implements SubscriberDao {
         return subscribers;
     }
 
-    private Set<Subscriber> getAllForFeed(Feed feed) {
+    private Set<Subscriber> getAllForFeedWithMode(Feed feed, SubscriptionModeEnum mode) {
         String SQL = "SELECT * FROM " + TABLE_NAME + " JOIN subscription ON subscriber.id=subscription.subscriberId " +
-                "WHERE subscription.feedId=?";
-        Set<Subscriber> subscribers = new HashSet<Subscriber>(jdbcTemplate.query(SQL, new SubsciberMapper(), feed.getId()));
+                "WHERE subscription.feedId=? AND subscription.mode=?";
+        Set<Subscriber> subscribers = new HashSet<Subscriber>(jdbcTemplate.query(SQL, new SubsciberMapper(), feed.getId(), mode.name()));
         // add subscriptions
         for (Subscriber subscriber : subscribers) {
             SQL = "SELECT " + SubscriptionDaoImpl.FIELDS + " FROM " + SubscriptionDaoImpl.TABLE_NAME + " JOIN feed ON "

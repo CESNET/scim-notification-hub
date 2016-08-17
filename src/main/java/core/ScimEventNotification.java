@@ -4,8 +4,8 @@ import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Scim Notification Event (SEN) notifies a subscriber of a possible change in state of a
@@ -16,22 +16,22 @@ import java.util.Map;
 public class ScimEventNotification implements java.io.Serializable {
     public static final String EVENT_SCHEMA = "urn:ietf:params:scim:schemas:notify:2.0:Event";
     private Long id;
-    private List<String> schemas;
-    private List<String> feedUris;
+    private Set<String> schemas;
+    private Set<String> feedUris;
     private String publisherUri;
-    private List<String> resourceUris;
+    private Set<String> resourceUris;
     private ScimEventTypeEnum type;
-    private List<String> attributes;
+    private Set<String> attributes;
     private Map<String, Object> values;
 
     @JsonCreator
     public ScimEventNotification(
-            @JsonProperty("schemas") final List<String> schemas,
-            @JsonProperty("feedUris") final List<String> feedUris,
+            @JsonProperty("schemas") final Set<String> schemas,
+            @JsonProperty("feedUris") final Set<String> feedUris,
             @JsonProperty("publisherUri") final String publisherUri,
-            @JsonProperty("resourceUris") final List<String> resourceUris,
+            @JsonProperty("resourceUris") final Set<String> resourceUris,
             @JsonProperty("type") final String type,
-            @JsonProperty("attributes") final List<String> attributes,
+            @JsonProperty("attributes") final Set<String> attributes,
             @JsonProperty("values") final Map<String, Object> values) {
         if (!schemas.contains(EVENT_SCHEMA)) {
             throw new IllegalArgumentException("Schemas must contain schema: '" + EVENT_SCHEMA + "'.");
@@ -54,27 +54,27 @@ public class ScimEventNotification implements java.io.Serializable {
         this.id = id;
     }
 
-    public List<String> getSchemas() {
+    public Set<String> getSchemas() {
         return schemas;
     }
 
-    public List<String> getFeedUris() {
-        return Collections.unmodifiableList(feedUris);
+    public Set<String> getFeedUris() {
+        return Collections.unmodifiableSet(feedUris);
     }
 
     public String getPublisherUri() {
         return publisherUri;
     }
 
-    public List<String> getResourceUris() {
-        return Collections.unmodifiableList(resourceUris);
+    public Set<String> getResourceUris() {
+        return Collections.unmodifiableSet(resourceUris);
     }
 
     public ScimEventTypeEnum getType() {
         return type;
     }
 
-    public List<String> getAttributes() {
+    public Set<String> getAttributes() {
         return attributes;
     }
 
@@ -89,26 +89,25 @@ public class ScimEventNotification implements java.io.Serializable {
 
         ScimEventNotification that = (ScimEventNotification) o;
 
-        if (id != null ? !id.equals(that.id) : that.id != null) return false;
-        if (schemas != null ? !schemas.equals(that.schemas) : that.schemas != null) return false;
-        if (feedUris != null ? !feedUris.equals(that.feedUris) : that.feedUris != null) return false;
-        if (publisherUri != null ? !publisherUri.equals(that.publisherUri) : that.publisherUri != null) return false;
-        if (resourceUris != null ? !resourceUris.equals(that.resourceUris) : that.resourceUris != null) return false;
+        if (!schemas.equals(that.schemas)) return false;
+        if (!feedUris.equals(that.feedUris)) return false;
+        if (!publisherUri.equals(that.publisherUri)) return false;
+        if (!resourceUris.equals(that.resourceUris)) return false;
         if (type != that.type) return false;
-        if (attributes != null ? !attributes.equals(that.attributes) : that.attributes != null) return false;
-        return values != null ? values.equals(that.values) : that.values == null;
+        if (!attributes.equals(that.attributes)) return false;
+        return values.equals(that.values);
+
     }
 
     @Override
     public int hashCode() {
-        int result = id != null ? id.hashCode() : 0;
-        result = 31 * result + (schemas != null ? schemas.hashCode() : 0);
-        result = 31 * result + (feedUris != null ? feedUris.hashCode() : 0);
-        result = 31 * result + (publisherUri != null ? publisherUri.hashCode() : 0);
-        result = 31 * result + (resourceUris != null ? resourceUris.hashCode() : 0);
-        result = 31 * result + (type != null ? type.hashCode() : 0);
-        result = 31 * result + (attributes != null ? attributes.hashCode() : 0);
-        result = 31 * result + (values != null ? values.hashCode() : 0);
+        int result = schemas.hashCode();
+        result = 31 * result + feedUris.hashCode();
+        result = 31 * result + publisherUri.hashCode();
+        result = 31 * result + resourceUris.hashCode();
+        result = 31 * result + type.hashCode();
+        result = 31 * result + attributes.hashCode();
+        result = 31 * result + values.hashCode();
         return result;
     }
 

@@ -15,14 +15,12 @@ import org.springframework.core.io.Resource;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.ResultSet;
@@ -31,7 +29,6 @@ import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -48,8 +45,14 @@ public class SubscriberDaoImplTest {
     private JdbcTemplate jdbcTemplate;
 
     @Inject
+    private DaoTestUtils testUtils;
+
+    @Inject
     @InjectMocks
     private SubscriberDao subscriberDao;
+
+    @Mock
+    ScimEventNotificationDaoImpl senDao;
 
     private static final String URI = "https://perun.cesnet.cz/scim-notification/storage-fi.ics.muni.cz/mailman";
     private static final String[] FILE_NAMES = new String[]{"sen1.json", "sen2.json", "sen3.json"};
@@ -58,9 +61,6 @@ public class SubscriberDaoImplTest {
     private Subscriber subscriber;
     private Feed feed;
     private Subscription subscription;
-
-    @Mock
-    ScimEventNotificationDaoImpl senDao;
 
     @Before
     public void setUp() throws Exception {
@@ -100,8 +100,8 @@ public class SubscriberDaoImplTest {
         Subscriber subscriber3 = new Subscriber(SBSC_ID + "2");
         Map<String, Subscriber> subscribers = new HashMap<String, Subscriber>();
         subscribers.put(SBSC_ID, subscriber1);
-        createSubscriberInDb(subscriber2);
-        createSubscriberInDb(subscriber3);
+        testUtils.createSubscriberInDb(subscriber2);
+        testUtils.createSubscriberInDb(subscriber3);
 
         // update
         subscriberDao.update(subscribers);
@@ -124,7 +124,7 @@ public class SubscriberDaoImplTest {
     @Test(expected = EmptyResultDataAccessException.class)
     public void removeTest() throws Exception {
         subscriber.addSubscription(subscription);
-        createSubscriberInDb(subscriber);
+        testUtils.createSubscriberInDb(subscriber);
 
         assertNotNull(getByIdFromDb(subscriber.getId()));
         subscriberDao.remove(subscriber);
@@ -140,20 +140,20 @@ public class SubscriberDaoImplTest {
         // create proper feed in db
         Subscriber sbsc = new Subscriber("other");
         Subscriber webCallbackSbsc = new Subscriber("webCallback");
-        createSubscriberInDb(subscriber);
-        createSubscriberInDb(sbsc);
-        createSubscriberInDb(webCallbackSbsc);
+        testUtils.createSubscriberInDb(subscriber);
+        testUtils.createSubscriberInDb(sbsc);
+        testUtils.createSubscriberInDb(webCallbackSbsc);
 
-        createFeedInDb(feed);
-        createSenInDb(sens.get(0), feed.getId(), null);
+        testUtils.createFeedInDb(feed);
+        testUtils.createSenInDb(sens.get(0), feed.getId(), null);
         Long senId = sens.get(0).getId();
         Subscription subscription1 = new Subscription(URI, SubscriptionModeEnum.poll, URI);
         Subscription webCallBackSubscription = new Subscription(URI, SubscriptionModeEnum.webCallback, URI);
         subscriber.addSubscription(subscription);
         sbsc.addSubscription(subscription1);
-        createSubscriptionInDb(subscription, feed, subscriber, null);
-        createSubscriptionInDb(subscription1, feed, sbsc, senId);
-        createSubscriptionInDb(webCallBackSubscription, feed, webCallbackSbsc, null);
+        testUtils.createSubscriptionInDb(subscription, feed, subscriber, null);
+        testUtils.createSubscriptionInDb(subscription1, feed, sbsc, senId);
+        testUtils.createSubscriptionInDb(webCallBackSubscription, feed, webCallbackSbsc, null);
 
         // mock senDao.getById method
         when(senDao.getById(anyLong())).thenReturn(sens.get(0));
@@ -182,19 +182,19 @@ public class SubscriberDaoImplTest {
         // create proper feed in db
         Subscriber sbsc1 = new Subscriber("wc1");
         Subscriber sbsc2 = new Subscriber("wc2");
-        createSubscriberInDb(subscriber);
-        createSubscriberInDb(sbsc1);
-        createSubscriberInDb(sbsc2);
+        testUtils.createSubscriberInDb(subscriber);
+        testUtils.createSubscriberInDb(sbsc1);
+        testUtils.createSubscriberInDb(sbsc2);
 
-        createFeedInDb(feed);
+        testUtils.createFeedInDb(feed);
         Subscription subscription1 = new Subscription(URI, SubscriptionModeEnum.webCallback, URI);
         Subscription subscription2 = new Subscription(URI, SubscriptionModeEnum.webCallback, URI);
         subscriber.addSubscription(subscription);
         sbsc1.addSubscription(subscription1);
         sbsc2.addSubscription(subscription2);
-        createSubscriptionInDb(subscription, feed, subscriber, null);
-        createSubscriptionInDb(subscription1, feed, sbsc1, null);
-        createSubscriptionInDb(subscription2, feed, sbsc2, null);
+        testUtils.createSubscriptionInDb(subscription, feed, subscriber, null);
+        testUtils.createSubscriptionInDb(subscription1, feed, sbsc1, null);
+        testUtils.createSubscriptionInDb(subscription2, feed, sbsc2, null);
 
         // get web callback subscribers
         Set<Subscriber> webCallbacksubscribers = subscriberDao.getWebCallbackSubscribers(feed);
@@ -273,84 +273,6 @@ public class SubscriberDaoImplTest {
         if (id == null) throw new IllegalStateException("Subscriber is not stored.");
         String SQL = "SELECT * FROM subscriber WHERE id=" + id;
         return jdbcTemplate.queryForObject(SQL, new SubsciberMapper());
-    }
-
-    private void createSubscriberInDb(Subscriber subscriber) {
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("identifier", subscriber.getIdentifier());
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("subscriber").usingGeneratedKeyColumns("id");
-        Number id = jdbcInsert.executeAndReturnKey(params);
-        subscriber.setId(id.longValue());
-    }
-
-    private void createFeedInDb(Feed feed) {
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("uri", feed.getUri());
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("feed").usingGeneratedKeyColumns("id");
-        Number id = jdbcInsert.executeAndReturnKey(params);
-        feed.setId(id.longValue());
-    }
-
-    private void createSubscriptionInDb(Subscription subscription, Feed feed, Subscriber subscriber, Long lastSeenMsg) {
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("mode", subscription.getMode().name());
-        params.put("eventUri", subscription.getEventUri());
-        params.put("subscriberId", subscriber.getId());
-        params.put("feedId", feed.getId());
-        params.put("lastSeenMsg", lastSeenMsg);
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("subscription").usingGeneratedKeyColumns("id");
-        Number id = jdbcInsert.executeAndReturnKey(params);
-        subscription.setId(id.longValue());
-    }
-
-    private void createSenInDb(ScimEventNotification sen, Long feedId, Long prevMsgId) {
-        storePureSen(sen);
-        // store feed - sen relationship
-        storeFeedSenRelationship(sen, feedId, prevMsgId);
-        // store attributes
-        storeMultipleRowsForSen("sen_attribute", "name", sen.getId(), sen.getAttributes());
-        // store resource uris
-        storeMultipleRowsForSen("sen_resource_uri", "uri", sen.getId(), sen.getResourceUris());
-        // store schemas
-        List<String> schemasToStore = sen.getSchemas();
-        schemasToStore.remove(ScimEventNotification.EVENT_SCHEMA); // remove the EVENT_SCHEMA, it's in all
-        storeMultipleRowsForSen("sen_schema", "name", sen.getId(), schemasToStore);
-    }
-
-    private void storePureSen(ScimEventNotification sen) {
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("publisherUri", sen.getPublisherUri());
-        params.put("type", sen.getType().name());
-        try {
-            params.put("sen_values", mapper.writeValueAsString(sen.getValues()));
-        } catch (IOException e) {
-            throw new IllegalStateException("Error when parsing sen values to plain JSON to store it in DB.", e);
-        }
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("scim_event_notification").usingGeneratedKeyColumns("id");
-        Number id = jdbcInsert.executeAndReturnKey(params);
-        sen.setId(id.longValue());
-    }
-
-    private void storeFeedSenRelationship(ScimEventNotification sen, Long feedId, Long prevMsgId) {
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.clear();
-        params.put("feedId", feedId);
-        params.put("senId", sen.getId());
-        params.put("prevMsgId", prevMsgId);
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("feed_sen");
-        jdbcInsert.execute(params);
-    }
-
-    private void storeMultipleRowsForSen(String tableName, String columnName, Long senId, List<String> values) {
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName(tableName);
-        Map<String, Object> params = new HashMap<String, Object>();
-        for (String value : values) {
-            params.clear();
-            params.put(columnName, value);
-            params.put("senId", senId);
-            jdbcInsert.execute(params);
-        }
     }
 
     private Set<Long> getAllSubscriptionIdsForSubscriber(Subscriber subscriber) {

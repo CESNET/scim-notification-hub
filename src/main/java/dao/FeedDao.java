@@ -27,17 +27,9 @@ public interface FeedDao {
      */
     public void update(Feed feed);
 
-
-    /**
-     * Add new message to the feed.
-     *
-     * @param feed owner of the msg
-     * @param sen  to be created
-     */
-    public void newMsg(Feed feed, ScimEventNotification sen);
-
     /**
      * Store the inner state of the feed into data storage.
+     * Only subscriptions to this feed are stored, in case the subscribers have more subscriptions.
      *
      * @param feed
      */

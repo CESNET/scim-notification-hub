@@ -9,10 +9,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Manager controls the notification hub and keeps all the feeds.
@@ -57,9 +54,11 @@ public class ManagerImpl implements Manager {
                 feed = new Feed(feedUri);
                 feeds.put(feedUri, feed);
                 feedDao.create(feed);
+            } else {
+                feedDao.update(feed);
             }
             subscribersToBeNotified.addAll(feed.newMsg(sen));
-            feedDao.newMsg(feed, sen);
+            feedDao.storeState(feed);
         }
         webCallbackSend(subscribersToBeNotified, sen);
     }
@@ -96,7 +95,7 @@ public class ManagerImpl implements Manager {
             feedDao.create(feed);
         }
         feed.addSubscriber(subscriber);
-        subscriptionDao.create(subscription, subscriber, feed, null);
+        subscriptionDao.create(subscription, subscriber, feed);
     }
 
     public boolean removeSubscription(String subscriberIdentifier, String feedUri) {
@@ -118,13 +117,13 @@ public class ManagerImpl implements Manager {
 
             // remove the subscriber if he has no subscriptions
             if (subscriber.getSubscriptions().isEmpty()) {
-                subscribers.remove(subscriber);
+                subscribers.remove(subscriber.getIdentifier());
                 subscriberDao.remove(subscriber);
             }
 
             // remove the feed if nobody is subscribed
             if (feed.getSubscribers().isEmpty()) {
-                feeds.remove(feed);
+                feeds.remove(feed.getUri());
                 feedDao.remove(feed);
             }
             return true;
@@ -149,22 +148,22 @@ public class ManagerImpl implements Manager {
 
             // remove the feed if nobody is subscribed
             if (feed.getSubscribers().isEmpty()) {
-                feeds.remove(feed);
+                feeds.remove(feed.getUri());
                 feedDao.remove(feed);
             }
         }
-        subscribers.remove(subscriber);
+        subscribers.remove(subscriber.getIdentifier());
         subscriberDao.remove(subscriber);
         return true;
     }
 
-    public Set<ScimEventNotification> poll(String subscriberId) {
-        if (subscriberId == null) throw new IllegalArgumentException("SubscriberId cannot be null.");
-        if (!subscribers.containsKey(subscriberId)) {
-            throw new IllegalArgumentException("Subscriber with id " + subscriberId + " does not exists.");
-        }
+    public Set<ScimEventNotification> poll(String subscriberIdentifier) {
+        if (subscriberIdentifier == null) throw new IllegalArgumentException("Subscriber's identifier cannot be null.");
         subscriberDao.update(subscribers);
-        Subscriber subscriber = subscribers.get(subscriberId);
+        if (!subscribers.containsKey(subscriberIdentifier)) {
+            throw new IllegalArgumentException("Subscriber with identifier " + subscriberIdentifier + " does not exists.");
+        }
+        Subscriber subscriber = subscribers.get(subscriberIdentifier);
         Set<ScimEventNotification> msgsToSend = new HashSet<ScimEventNotification>();
         for (Subscription subscription : subscriber.getSubscriptions()) {
             Feed feed = feeds.get(subscription.getFeedUri());
@@ -175,7 +174,7 @@ public class ManagerImpl implements Manager {
         return msgsToSend;
     }
 
-    void webCallbackSend(Set<Subscriber> subscribers, ScimEventNotification sen) {
+    public void webCallbackSend(Set<Subscriber> subscribers, ScimEventNotification sen) {
         // TODO - initiate send of the sen message to all the subscribers
     }
 

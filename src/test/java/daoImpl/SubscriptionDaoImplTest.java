@@ -9,13 +9,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.internal.matchers.Null;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -24,9 +22,6 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.*;
@@ -45,14 +40,17 @@ public class SubscriptionDaoImplTest {
     private JdbcTemplate jdbcTemplate;
 
     @Inject
+    private DaoTestUtils testUtils;
+
+    @Inject
     private SubscriptionDao subscriptionDao;
 
     private static final String URI = "https://perun.cesnet.cz/scim-notification/storage-fi.ics.muni.cz/mailman";
     private static final String SBSC_ID = "id";
 
-    private Subscriber subscriber = new Subscriber(SBSC_ID);
-    private Feed feed = new Feed(URI);
-    private Subscription subscription = new Subscription(URI, SubscriptionModeEnum.poll, URI);
+    private Subscriber subscriber;
+    private Feed feed;
+    private Subscription subscription;
 
     @Before
     public void setUp() throws Exception {
@@ -61,8 +59,11 @@ public class SubscriptionDaoImplTest {
         ScriptUtils.executeSqlScript(dataSource.getConnection(), create);
 
         // prepare data
-        createSubscriberInDb(subscriber);
-        createFeedInDb(feed);
+        subscriber = new Subscriber(SBSC_ID);
+        feed = new Feed(URI);
+        subscription = new Subscription(URI, SubscriptionModeEnum.poll, URI);
+        testUtils.createSubscriberInDb(subscriber);
+        testUtils.createFeedInDb(feed);
     }
 
     @After
@@ -73,7 +74,7 @@ public class SubscriptionDaoImplTest {
 
     @Test
     public void createTest() throws Exception {
-        subscriptionDao.create(subscription, subscriber, feed, null);
+        subscriptionDao.create(subscription, subscriber, feed);
         assertNotNull(subscription.getId());
         Subscription returned = getByIdFromDb(subscription.getId());
         assertEquals(subscription.getId(), returned.getId());
@@ -82,7 +83,7 @@ public class SubscriptionDaoImplTest {
 
     @Test(expected = EmptyResultDataAccessException.class)
     public void removeTest() throws Exception {
-        createSubscriptionInDb(subscription, subscriber, feed);
+        testUtils.createSubscriptionInDb(subscription, feed, subscriber, null);
         assertNotNull(getByIdFromDb(subscription.getId()));
         subscriptionDao.remove(SBSC_ID, URI);
 
@@ -92,7 +93,7 @@ public class SubscriptionDaoImplTest {
 
     @Test(expected = EmptyResultDataAccessException.class)
     public void removeByIdTest() throws Exception {
-        createSubscriptionInDb(subscription, subscriber, feed);
+        testUtils.createSubscriptionInDb(subscription, feed, subscriber, null);
         assertNotNull(getByIdFromDb(subscription.getId()));
         subscriptionDao.remove(subscription.getId());
 
@@ -103,12 +104,27 @@ public class SubscriptionDaoImplTest {
     @Test
     public void getAllIdsForSubscriberTest() throws Exception {
         Feed feed1 = new Feed("other");
-        createFeedInDb(feed1);
+        testUtils.createFeedInDb(feed1);
         Subscription subscr = new Subscription("other", SubscriptionModeEnum.webCallback, URI);
-        createSubscriptionInDb(subscription, subscriber, feed);
-        createSubscriptionInDb(subscr, subscriber, feed1);
+        testUtils.createSubscriptionInDb(subscription, feed, subscriber, null);
+        testUtils.createSubscriptionInDb(subscr, feed1, subscriber, null);
 
         Set<Long> ids = subscriptionDao.getAllIdsForSubscriber(subscriber);
+
+        assertEquals(2, ids.size());
+        assertTrue(ids.contains(subscription.getId()));
+        assertTrue(ids.contains(subscr.getId()));
+    }
+
+    @Test
+    public void getAllIdsForFeedTest() throws Exception {
+        Subscriber sbsc = new Subscriber("second");
+        Subscription subscr = new Subscription(URI, SubscriptionModeEnum.webCallback, URI);
+        testUtils.createSubscriberInDb(sbsc);
+        testUtils.createSubscriptionInDb(subscription, feed, subscriber, null);
+        testUtils.createSubscriptionInDb(subscr, feed, sbsc, null);
+
+        Set<Long> ids = subscriptionDao.getAllIdsForFeed(feed);
 
         assertEquals(2, ids.size());
         assertTrue(ids.contains(subscription.getId()));
@@ -120,29 +136,29 @@ public class SubscriptionDaoImplTest {
 
     @Test(expected = NullPointerException.class)
     public void createWithNullSubscription() throws Exception {
-        subscriptionDao.create(null, subscriber, feed, null);
+        subscriptionDao.create(null, subscriber, feed);
     }
 
     @Test(expected = NullPointerException.class)
     public void createWithNullSubscriber() throws Exception {
-        subscriptionDao.create(subscription, null, feed, null);
+        subscriptionDao.create(subscription, null, feed);
     }
 
     @Test(expected = NullPointerException.class)
     public void createWithNullFeed() throws Exception {
-        subscriptionDao.create(subscription, subscriber, null, null);
+        subscriptionDao.create(subscription, subscriber, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void createWithSubscriberNotStored() throws Exception {
         subscriber.setId(null);
-        subscriptionDao.create(subscription, subscriber, feed, null);
+        subscriptionDao.create(subscription, subscriber, feed);
     }
 
     @Test(expected = NullPointerException.class)
     public void createWithFeedNotStored() throws Exception {
         feed.setId(null);
-        subscriptionDao.create(subscription, subscriber, feed, null);
+        subscriptionDao.create(subscription, subscriber, feed);
     }
 
     @Test(expected = NullPointerException.class)
@@ -171,35 +187,17 @@ public class SubscriptionDaoImplTest {
         subscriptionDao.getAllIdsForSubscriber(subscriber);
     }
 
+    @Test(expected = NullPointerException.class)
+    public void getAllIdsForNullFeed() throws Exception {
+        subscriptionDao.getAllIdsForFeed(null);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void getAllIdsForNotStoredFeed() throws Exception {
+        feed.setId(null);
+        subscriptionDao.getAllIdsForFeed(feed);
+    }
     /* ========= PRIVATE METHODS ================== */
-
-    private void createSubscriptionInDb(Subscription subscription, Subscriber subscriber, Feed feed) {
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("mode", subscription.getMode().name());
-        params.put("eventUri", subscription.getEventUri());
-        params.put("subscriberId", subscriber.getId());
-        params.put("feedId", feed.getId());
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("subscription")
-                .usingGeneratedKeyColumns("id");
-        Number id = jdbcInsert.executeAndReturnKey(params);
-        subscription.setId(id.longValue());
-    }
-
-    private void createSubscriberInDb(Subscriber subscriber) {
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("identifier", subscriber.getIdentifier());
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("SUBSCRIBER").usingGeneratedKeyColumns("id");
-        Number id = jdbcInsert.executeAndReturnKey(params);
-        subscriber.setId(id.longValue());
-    }
-
-    private void createFeedInDb(Feed feed) {
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("uri", feed.getUri());
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("feed").usingGeneratedKeyColumns("id");
-        Number id = jdbcInsert.executeAndReturnKey(params);
-        feed.setId(id.longValue());
-    }
 
     public Subscription getByIdFromDb(Long id) {
         class SubscriptionMapper implements RowMapper<Subscription> {

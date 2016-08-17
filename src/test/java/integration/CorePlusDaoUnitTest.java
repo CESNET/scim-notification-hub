@@ -1,27 +1,29 @@
-package core;
+package integration;
 
-import dao.FeedDao;
-import dao.SubscriberDao;
-import dao.SubscriptionDao;
+import core.*;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.*;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.inject.Inject;
-
-import static org.mockito.Mockito.*;
-
+import javax.sql.DataSource;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
 
 /**
  * Test of the Manager class.
@@ -29,23 +31,16 @@ import static org.junit.Assert.*;
  * @author Jiri Mauritz
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = CoreTestConfig.class)
+@ContextConfiguration(classes = IntegrationTestConfig.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-public class ManagerImplTest {
+public class CorePlusDaoUnitTest {
 
     @Inject
-    @InjectMocks
+    private DataSource dataSource;
+
+    @Inject
     @Spy
     private ManagerImpl manager;
-
-    @Mock
-    private FeedDao feedDao;
-
-    @Mock
-    private SubscriberDao subscriberDao;
-
-    @Mock
-    private SubscriptionDao subscriptionDao;
 
     private static final String[] FILE_NAMES = new String[]{"sen1.json", "sen2.json", "sen3.json"};
     private static final String FEED1 = "https://perun.cesnet.cz/scim-notification/storage-fi.ics.muni.cz/mailman";
@@ -66,6 +61,16 @@ public class ManagerImplTest {
 
         // set up mocks
         MockitoAnnotations.initMocks(this);
+
+        // load db tables
+        Resource create = new ClassPathResource("sql/createTablesDerby.sql");
+        ScriptUtils.executeSqlScript(dataSource.getConnection(), create);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        Resource drop = new ClassPathResource("sql/dropTablesDerby.sql");
+        ScriptUtils.executeSqlScript(dataSource.getConnection(), drop);
     }
 
     @Test
@@ -75,7 +80,7 @@ public class ManagerImplTest {
         // verify
         ObjectMapper mapper = new ObjectMapper();
         ScimEventNotification sen = mapper.readValue(sens.get(0), ScimEventNotification.class);
-        verify(manager).webCallbackSend(new HashSet<Subscriber>(), sen);
+        verify(manager).webCallbackSend(eq(new HashSet<Subscriber>()), eq(sen));
     }
 
     @Test
@@ -286,7 +291,7 @@ public class ManagerImplTest {
     }
 
     private void checkSens(Set<ScimEventNotification> sens, String ... feedUrisArray) {
-        assertTrue(sens.size() == feedUrisArray.length);
+        assertEquals(feedUrisArray.length, sens.size());
         Set<String> feedUris = new HashSet<String>(Arrays.asList(feedUrisArray));
         Iterator<ScimEventNotification> iter = sens.iterator();
         Set<String> returnedFeedUris = new HashSet<String>();

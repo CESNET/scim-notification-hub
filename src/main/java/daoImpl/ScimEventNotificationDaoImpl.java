@@ -3,7 +3,6 @@ package daoImpl;
 import core.Feed;
 import core.ScimEventNotification;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.springframework.beans.NullValueInNestedPathException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
@@ -48,7 +47,7 @@ public class ScimEventNotificationDaoImpl {
             // store resource uris
             storeMultipleRowsForSen("sen_resource_uri", "uri", sen.getId(), sen.getResourceUris());
             // store schemas
-            List<String> schemasToStore = new ArrayList<String>(sen.getSchemas());
+            Set<String> schemasToStore = new HashSet<String>(sen.getSchemas());
             schemasToStore.remove(ScimEventNotification.EVENT_SCHEMA); // remove the EVENT_SCHEMA, it's in all
             storeMultipleRowsForSen("sen_schema", "name", sen.getId(), schemasToStore);
 
@@ -98,26 +97,26 @@ public class ScimEventNotificationDaoImpl {
 
         // get schemas
         SQL = "SELECT name FROM sen_schema WHERE senId=?";
-        List<String> schemas = jdbcTemplate.queryForList(SQL, String.class, id);
+        Set<String> schemas = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
         schemas.add(ScimEventNotification.EVENT_SCHEMA);
 
         // get feed uris
         SQL = "SELECT feed.uri FROM feed JOIN feed_sen ON feed.id=feed_sen.feedId WHERE senId=?";
-        List<String> feedUris = jdbcTemplate.queryForList(SQL, String.class, id);
+        Set<String> feedUris = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
 
         // get publisher uri
         String publisherUri = rs.getString("publisherUri");
 
         // get resource uris
         SQL = "SELECT uri FROM sen_resource_uri WHERE senId=?";
-        List<String> resourceUris = jdbcTemplate.queryForList(SQL, String.class, id);
+        Set<String> resourceUris = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
 
         // get type
         String type = rs.getString("type");
 
         // get attributes
         SQL = "SELECT name FROM sen_attribute WHERE senId=?";
-        List<String> attributes = jdbcTemplate.queryForList(SQL, String.class, id);
+        Set<String> attributes = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
 
         // get values
         String json = getStringOutOfClob(rs.getObject("sen_values"));
@@ -147,6 +146,7 @@ public class ScimEventNotificationDaoImpl {
         return jdbcTemplate.queryForObject(SQL, Long.class, sen.getId(), feed.getId());
     }
 
+
     /* ============ PRIVATE METHODS ============= */
 
     private void storePureSen(ScimEventNotification sen) {
@@ -174,7 +174,7 @@ public class ScimEventNotificationDaoImpl {
         jdbcInsert.execute(params);
     }
 
-    private void storeMultipleRowsForSen(String tableName, String columnName, Long senId, List<String> values) {
+    private void storeMultipleRowsForSen(String tableName, String columnName, Long senId, Set<String> values) {
         SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName(tableName);
         Map<String, Object> params = new HashMap<String, Object>();
         for (String value: values) {
@@ -196,7 +196,6 @@ public class ScimEventNotificationDaoImpl {
                 sb.append((char) b);
             }
             br.close();
-            String theName = sb.toString();
         } catch (SQLException e) {
             throw new IllegalStateException("Wrong clob object for sen values.", e);
         } catch (IOException e) {
