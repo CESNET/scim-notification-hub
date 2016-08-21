@@ -1,9 +1,5 @@
 package core;
 
-import dao.SubscriberDao;
-
-import javax.inject.Inject;
-import javax.inject.Named;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -44,6 +40,7 @@ public class Subscriber {
 
     /**
      * Retrieve all subscriptions of the subscriber.
+     *
      * @return all subscriptions
      */
     public Set<Subscription> getSubscriptions() {
@@ -52,6 +49,7 @@ public class Subscriber {
 
     /**
      * Adds subscription. Only one subscription to the single feed is allowed.
+     *
      * @param subscription to be added
      */
     public void addSubscription(Subscription subscription) {

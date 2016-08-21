@@ -27,7 +27,9 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 /**
- * Created by xmauritz on 8/8/16.
+ * Test of the Subscription DAO implementation.
+ *
+ * @author Jiri Mauritz
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = DaoTestConfig.class)

@@ -1,9 +1,6 @@
 package daoImpl;
 
-import core.Feed;
-import core.Subscriber;
-import core.Subscription;
-import core.SubscriptionModeEnum;
+import core.*;
 import dao.SubscriptionDao;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -20,7 +17,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by xmauritz on 8/9/16.
+ * DAO for the subscription object.
+ *
+ * @author Jiri Mauritz
  */
 @Named
 @Singleton
@@ -53,7 +52,8 @@ public class SubscriptionDaoImpl implements SubscriptionDao {
         params.put("eventUri", subscription.getEventUri());
         params.put("subscriberId", subscriber.getId());
         params.put("feedId", feed.getId());
-        params.put("lastSeenMsg", null);
+        ScimEventNotification lastSeenSen = feed.getPollSubscribersLastMsg().get(subscriber);
+        params.put("lastSeenMsg", lastSeenSen == null ? null : lastSeenSen.getId());
         SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName(TABLE_NAME).usingGeneratedKeyColumns("id");
         Number id = jdbcInsert.executeAndReturnKey(params);
         subscription.setId(id.longValue());

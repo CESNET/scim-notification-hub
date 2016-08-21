@@ -8,7 +8,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by xmauritz on 8/8/16.
+ * Interface for the subscriber DAO.
+ * Manages CRUD operations for the subscriber object.
+ *
+ * @author Jiri Mauritz
  */
 public interface SubscriberDao {
 

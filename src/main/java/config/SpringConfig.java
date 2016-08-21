@@ -1,7 +1,5 @@
 package config;
 
-import dao.SubscriberDao;
-import daoImpl.SubscriberDaoImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;

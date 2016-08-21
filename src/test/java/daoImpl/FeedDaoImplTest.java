@@ -22,9 +22,11 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.util.StringUtils;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.ResultSet;
@@ -37,7 +39,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Created by xmauritz on 8/16/16.
+ * Test of the FeedDao implementation.
+ *
+ * @author Jiri Mauritz
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = DaoTestConfig.class)
@@ -100,8 +104,8 @@ public class FeedDaoImplTest {
         ObjectMapper mapper = new ObjectMapper();
         // load sen objects from files
         for (String fileName : FILE_NAMES) {
-            List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()));
-            sens.add(mapper.readValue(String.join("\n", jsonLines), ScimEventNotification.class));
+            List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()), Charset.defaultCharset());
+            sens.add(mapper.readValue(StringUtils.collectionToDelimitedString(jsonLines, "\n"), ScimEventNotification.class));
         }
     }
 
@@ -325,21 +329,33 @@ public class FeedDaoImplTest {
         feedMail.newMsg(sens.get(0));
         feedMail.newMsg(sens.get(1));
 
-        // create feed
+        // create feeds
         testUtils.createFeedInDb(feedMail);
+        testUtils.createFeedInDb(feedEdu);
+        testUtils.createSubscriberInDb(subscriber);
+        testUtils.createSubscriberInDb(sbscPoll);
+        testUtils.createSubscriberInDb(sbscWC);
+        testUtils.createSubscriptionInDb(subscription, feedMail, subscriber, null);
+        testUtils.createSubscriptionInDb(subWC, feedMail, sbscWC, null);
+        testUtils.createSubscriptionInDb(subPoll, feedMail, sbscPoll, null);
+        testUtils.createSenInDb(sens.get(0), feedMail.getId(), null);
+        testUtils.createSenInDb(sens.get(0), feedEdu.getId(), null);
+        testUtils.createSenInDb(sens.get(1), feedMail.getId(), sens.get(0).getId());
+
+        // mock
+        when(senDao.getIdsForFeed(feedMail))
+                .thenReturn(new HashSet<>(Arrays.asList(sens.get(0).getId(), sens.get(1).getId())));
 
         // remove
-        when(senDao.getIdsForFeed(feedMail)).thenReturn(new HashSet<Long>(Arrays.asList(sens.get(0).getId(), sens.get(1).getId())));
         feedDao.remove(feedMail);
-
-        // verify calls
-        verify(senDao).removeSen(sens.get(0).getId());
-        verify(senDao).removeSen(sens.get(1).getId());
 
         // assert subscriptions are not in db
         assertSubscriptionNotInDb(subscription);
         assertSubscriptionNotInDb(subWC);
         assertSubscriptionNotInDb(subPoll);
+
+        // assert sen 1 is not in db
+        assertSenNotInDb(sens.get(1));
 
         // assert feed is not is db
         getFeedById(feedMail.getId());
@@ -410,5 +426,10 @@ public class FeedDaoImplTest {
     private void assertSubscriptionNotInDb(Subscription subscription) {
         String SQL = "SELECT COUNT(*) FROM subscription WHERE id=?";
         assertEquals(0, jdbcTemplate.queryForObject(SQL, Integer.class, subscription.getId()).intValue());
+    }
+
+    private void assertSenNotInDb(ScimEventNotification sen) {
+        String SQL = "SELECT COUNT(*) FROM scim_event_notification WHERE id=?";
+        assertEquals(0, jdbcTemplate.queryForObject(SQL, Integer.class, sen.getId()).intValue());
     }
 }

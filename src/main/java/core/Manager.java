@@ -25,10 +25,9 @@ public interface Manager {
      * If the subscriber or the feed do not exist, they are created.
      *
      * @param subscriberId identificator of the subscriber
-     * @param feedUri uri of the feed
-     * @param mode mode of the subscription (web callback / poll)
-     * @param eventUri uri for notification
-     *
+     * @param feedUri      uri of the feed
+     * @param mode         mode of the subscription (web callback / poll)
+     * @param eventUri     uri for notification
      * @throws IllegalArgumentException if the subscription already exists
      */
     public void newSubscription(String subscriberId, String feedUri, SubscriptionModeEnum mode, String eventUri);
@@ -38,8 +37,7 @@ public interface Manager {
      * If the subscriber or feed does not exists, returns false.
      *
      * @param subscriberId id of the subscriber
-     * @param feedUri uri of the feed
-     *
+     * @param feedUri      uri of the feed
      * @return true if the subscription was removed
      */
     public boolean removeSubscription(String subscriberId, String feedUri);
@@ -49,7 +47,6 @@ public interface Manager {
      * If the subscriber is not subscribed anywhere, returns false.
      *
      * @param subscriberId id of the subscriber
-     *
      * @return true if the subscriber was removed
      */
     public boolean removeSubscriber(String subscriberId);
@@ -59,7 +56,6 @@ public interface Manager {
      * and return collection of all new messages from all feeds.
      *
      * @param subscriberId id of the subscriber
-     *
      * @return set of all new messages to be send to the subscriber
      */
     public Set<ScimEventNotification> poll(String subscriberId);

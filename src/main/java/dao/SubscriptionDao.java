@@ -7,7 +7,10 @@ import core.Subscription;
 import java.util.Set;
 
 /**
- * Created by xmauritz on 8/9/16.
+ * Interface for the subscription DAO.
+ * Manages CRUD operations for the subscription object.
+ *
+ * @author Jiri Mauritz
  */
 public interface SubscriptionDao {
 
@@ -24,7 +27,7 @@ public interface SubscriptionDao {
      * Store the last message seen by poll subscriber in the feed.
      *
      * @param subscription for poll subscriber for which the last seen value is stored
-     * @param lastSeenMsg id of the msg that was last seen by poll subscriber in the feed (null for webCallback subscriber)
+     * @param lastSeenMsg  id of the msg that was last seen by poll subscriber in the feed (null for webCallback subscriber)
      */
     public void storeLastSeenMsg(Subscription subscription, Long lastSeenMsg);
 

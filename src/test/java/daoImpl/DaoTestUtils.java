@@ -12,10 +12,16 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Created by xmauritz on 8/16/16.
+ * Util methods for DAO layer.
+ * Methods store and retrieve data from database.
+ *
+ * @author Jiri Mauritz
  */
 @Named
 @Singleton
@@ -63,10 +69,9 @@ public class DaoTestUtils {
             // store resource uris
             storeMultipleRowsForSen("sen_resource_uri", "uri", sen.getId(), sen.getResourceUris());
             // store schemas
-            Set<String> schemasToStore = new HashSet<String>(sen.getSchemas());
+            Set<String> schemasToStore = new HashSet<>(sen.getSchemas());
             schemasToStore.remove(ScimEventNotification.EVENT_SCHEMA); // remove the EVENT_SCHEMA, it's in all
             storeMultipleRowsForSen("sen_schema", "name", sen.getId(), schemasToStore);
-
         } else {
             // sen is already stored
             int records = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM feed_sen WHERE feedId=? AND senId=?", Integer.class, feedId, sen.getId());

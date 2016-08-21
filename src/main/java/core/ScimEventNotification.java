@@ -4,12 +4,13 @@ import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Scim Notification Event (SEN) notifies a subscriber of a possible change in state of a
-   resource contained within a specified feed.
+ * resource contained within a specified feed.
  *
  * @author Jiri Mauritz
  */
@@ -90,8 +91,11 @@ public class ScimEventNotification implements java.io.Serializable {
         ScimEventNotification that = (ScimEventNotification) o;
 
         if (!schemas.equals(that.schemas)) return false;
-        if (!feedUris.equals(that.feedUris)) return false;
         if (!publisherUri.equals(that.publisherUri)) return false;
+        // at least one feed uri must be common
+        Set<String> common = new HashSet<>(this.feedUris);
+        common.retainAll(that.feedUris);
+        if (common.isEmpty()) return false;
         if (!resourceUris.equals(that.resourceUris)) return false;
         if (type != that.type) return false;
         if (!attributes.equals(that.attributes)) return false;

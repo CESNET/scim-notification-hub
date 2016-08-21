@@ -123,7 +123,7 @@ public class Feed {
         // filter the subscriber according to his notification mode
         if (subscription.getMode().equals(SubscriptionModeEnum.poll)) {
             // poll subscriber
-            this.pollSubscribersLastMsg.put(subscriber, null);
+            this.pollSubscribersLastMsg.put(subscriber, messages.isEmpty() ? null : messages.get(0));
             this.slowestPollSubscriber = subscriber;
         } else {
             // webCallback subscriber

@@ -15,10 +15,15 @@ import java.io.IOException;
 import java.io.Reader;
 import java.sql.Clob;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Created by xmauritz on 8/12/16.
+ * DAO for the Scim Event Notification object.
+ *
+ * @author Jiri Mauritz
  */
 @Named
 @Singleton
@@ -30,9 +35,14 @@ public class ScimEventNotificationDaoImpl {
     private JdbcTemplate jdbcTemplate;
 
     /**
+     * Store Scim Event Notification to the storage.
+     * If the sen is already stored, only prevMsgId is updated.
      * Feeds connected with the sen has to be already created.
-     * @param sen
-     * @param prevMsgId
+     * Only relationship for specified feed is created, other feeds are left for other processing.
+     *
+     * @param sen       to be stored
+     * @param feedId    of the feed, where sen belongs
+     * @param prevMsgId is id of the previous message in the queue of the feed
      */
     public void storeSen(ScimEventNotification sen, Long feedId, Long prevMsgId) {
         if (sen == null) throw new NullPointerException("ScimEventNotification cannot be null");
@@ -65,6 +75,13 @@ public class ScimEventNotificationDaoImpl {
         }
     }
 
+    /**
+     * Remove Scim Event Notification in the storage.
+     * It is removed from all feeds.
+     * The other records in storage (schemas, attributes, resource uris) are removed by cascade mode in the storage.
+     *
+     * @param senId of the scim event notification
+     */
     public void removeSen(Long senId) {
         if (senId == null) throw new NullPointerException("ScimEventNotification id cannot be null.");
 
@@ -79,6 +96,12 @@ public class ScimEventNotificationDaoImpl {
         if (rows == 0) throw new IllegalStateException("No such subscriber.");
     }
 
+    /**
+     * Retrieve set of all ids from the storage that belong to the specified feed.
+     *
+     * @param feed for which the sens will be retrieved
+     * @return set of all ids for the feed
+     */
     public Set<Long> getIdsForFeed(Feed feed) {
         if (feed == null) throw new NullPointerException("Feed cannot be null.");
         if (feed.getId() == null) throw new IllegalStateException("Feed is not stored.");
@@ -87,6 +110,12 @@ public class ScimEventNotificationDaoImpl {
         return new HashSet<Long>(jdbcTemplate.queryForList(SQL, Long.class, feed.getId()));
     }
 
+    /**
+     * Retrieve Scim Event Notification by id from the storage.
+     *
+     * @param id of the Scim Event Notification
+     * @return sen
+     */
     public ScimEventNotification getById(Long id) {
         if (id == null) throw new NullPointerException("Id cannot be null.");
 
@@ -137,6 +166,14 @@ public class ScimEventNotificationDaoImpl {
         return sen;
     }
 
+    /**
+     * Retrieve id of the previous message from the storage, representing the previous message in the queue of the feed.
+     * If the message is first in the queue, returns null.
+     *
+     * @param sen  for which predecessor is found
+     * @param feed
+     * @return id of the previous message, null if the sen is first in the queue
+     */
     public Long getMessagePredecessor(ScimEventNotification sen, Feed feed) {
         if (sen == null) throw new NullPointerException("ScimEventNotification cannot be null.");
         if (feed == null) throw new NullPointerException("Feed cannot be null.");
@@ -177,7 +214,7 @@ public class ScimEventNotificationDaoImpl {
     private void storeMultipleRowsForSen(String tableName, String columnName, Long senId, Set<String> values) {
         SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName(tableName);
         Map<String, Object> params = new HashMap<String, Object>();
-        for (String value: values) {
+        for (String value : values) {
             params.clear();
             params.put(columnName, value);
             params.put("senId", senId);

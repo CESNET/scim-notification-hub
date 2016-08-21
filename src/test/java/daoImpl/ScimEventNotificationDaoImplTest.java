@@ -14,12 +14,14 @@ import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.util.StringUtils;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Clob;
@@ -29,7 +31,9 @@ import java.util.*;
 import static org.junit.Assert.*;
 
 /**
- * Created by xmauritz on 8/15/16.
+ * Test of the Scim Event Notification Dao implementation.
+ *
+ * @author Jiri Mauritz
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = DaoTestConfig.class)
@@ -65,8 +69,8 @@ public class ScimEventNotificationDaoImplTest {
         ObjectMapper mapper = new ObjectMapper();
         // load sen objects from files
         for (String fileName : FILE_NAMES) {
-            List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()));
-            sens.add(mapper.readValue(String.join("\n", jsonLines), ScimEventNotification.class));
+            List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()), Charset.defaultCharset());
+            sens.add(mapper.readValue(StringUtils.collectionToDelimitedString(jsonLines, "\n"), ScimEventNotification.class));
         }
 
         // prepare data

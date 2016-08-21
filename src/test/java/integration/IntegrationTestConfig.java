@@ -11,7 +11,10 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import javax.sql.DataSource;
 
 /**
- * Created by xmauritz on 8/8/16.
+ * Configuration for the integration tests.
+ * Dao layer and database are active.
+ *
+ * @author Jiri Mauritz
  */
 @Configuration
 @Import(SpringConfig.class)

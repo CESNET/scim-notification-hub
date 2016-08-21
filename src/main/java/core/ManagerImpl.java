@@ -9,7 +9,10 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Manager controls the notification hub and keeps all the feeds.
@@ -29,7 +32,10 @@ public class ManagerImpl implements Manager {
     @Inject
     private SubscriptionDao subscriptionDao;
 
+    // feed uri mapped on the feed object
     Map<String, Feed> feeds = new HashMap<String, Feed>();
+
+    // subscriber identificator mapped on the subscriber object
     Map<String, Subscriber> subscribers = new HashMap<String, Subscriber>();
 
 
@@ -163,17 +169,28 @@ public class ManagerImpl implements Manager {
         if (!subscribers.containsKey(subscriberIdentifier)) {
             throw new IllegalArgumentException("Subscriber with identifier " + subscriberIdentifier + " does not exists.");
         }
+
+        // get subscriber
         Subscriber subscriber = subscribers.get(subscriberIdentifier);
-        Set<ScimEventNotification> msgsToSend = new HashSet<ScimEventNotification>();
+        Set<ScimEventNotification> msgsToSend = new HashSet<>();
+        // retrieve all msgs for each feed
         for (Subscription subscription : subscriber.getSubscriptions()) {
-            Feed feed = feeds.get(subscription.getFeedUri());
-            feedDao.update(feed);
-            msgsToSend.addAll(feed.poll(subscriber));
-            feedDao.storeState(feed);
+            if (subscription.getMode().equals(SubscriptionModeEnum.poll)) {
+                Feed feed = feeds.get(subscription.getFeedUri());
+                feedDao.update(feed);
+                msgsToSend.addAll(feed.poll(subscriber));
+                feedDao.storeState(feed);
+            }
         }
         return msgsToSend;
     }
 
+    /**
+     * Call REST layer to inform the subscribers about the scim event.
+     *
+     * @param subscribers to be informed about scim event
+     * @param sen         which defines the scim event
+     */
     public void webCallbackSend(Set<Subscriber> subscribers, ScimEventNotification sen) {
         // TODO - initiate send of the sen message to all the subscribers
     }

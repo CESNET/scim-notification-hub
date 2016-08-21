@@ -3,7 +3,9 @@ package core;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
+import org.springframework.util.StringUtils;
 
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -20,8 +22,8 @@ public class ScimEventNotificationTest {
     @Test
     public void jsonSerializationTest() throws Exception {
         // load sen from file
-        List<String> jsonList = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(FILE_NAME).toURI()));
-        String json = String.join("\n", jsonList);
+        List<String> jsonList = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(FILE_NAME).toURI()), Charset.defaultCharset());
+        String json = StringUtils.collectionToDelimitedString(jsonList, "\n");
 
         ObjectMapper mapper = new ObjectMapper();
         // String -> JSON

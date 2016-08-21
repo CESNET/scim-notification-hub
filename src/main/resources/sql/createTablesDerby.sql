@@ -21,8 +21,10 @@ CREATE TABLE subscription (
   mode         VARCHAR(64)   NOT NULL,
   eventUri     VARCHAR(2083) NOT NULL,
   lastSeenMsg  BIGINT REFERENCES scim_event_notification (id),
-  subscriberId BIGINT        NOT NULL REFERENCES subscriber (id) ON DELETE CASCADE,
-  feedId       BIGINT        NOT NULL REFERENCES feed (id) ON DELETE CASCADE
+  subscriberId BIGINT        NOT NULL REFERENCES subscriber (id)
+    ON DELETE CASCADE,
+  feedId       BIGINT        NOT NULL REFERENCES feed (id)
+    ON DELETE CASCADE
 );
 
 CREATE TABLE feed_sen (
@@ -34,15 +36,18 @@ CREATE TABLE feed_sen (
 
 CREATE TABLE sen_attribute (
   name  VARCHAR(512) NOT NULL,
-  senId BIGINT       NOT NULL REFERENCES scim_event_notification (id) ON DELETE CASCADE
+  senId BIGINT       NOT NULL REFERENCES scim_event_notification (id)
+    ON DELETE CASCADE
 );
 
 CREATE TABLE sen_resource_uri (
   uri   VARCHAR(512) NOT NULL,
-  senId BIGINT       NOT NULL REFERENCES scim_event_notification (id) ON DELETE CASCADE
+  senId BIGINT       NOT NULL REFERENCES scim_event_notification (id)
+    ON DELETE CASCADE
 );
 
 CREATE TABLE sen_schema (
   name  VARCHAR(512) NOT NULL,
-  senId BIGINT       NOT NULL REFERENCES scim_event_notification (id) ON DELETE CASCADE
+  senId BIGINT       NOT NULL REFERENCES scim_event_notification (id)
+    ON DELETE CASCADE
 );

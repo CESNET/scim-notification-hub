@@ -4,24 +4,27 @@ import dao.FeedDao;
 import dao.SubscriberDao;
 import dao.SubscriptionDao;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.util.StringUtils;
 
 import javax.inject.Inject;
-
-import static org.mockito.Mockito.*;
-
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
 
 /**
  * Test of the Manager class.
@@ -60,8 +63,8 @@ public class ManagerImplTest {
         // load sen objects from files
         sens = new ArrayList<String>();
         for (String fileName : FILE_NAMES) {
-            List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()));
-            sens.add(String.join("\n", jsonLines));
+            List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()), Charset.defaultCharset());
+            sens.add(StringUtils.collectionToDelimitedString(jsonLines, "\n"));
         }
 
         // set up mocks
@@ -285,7 +288,7 @@ public class ManagerImplTest {
         assertFalse(manager.removeSubscriber(SBSC1_ID));
     }
 
-    private void checkSens(Set<ScimEventNotification> sens, String ... feedUrisArray) {
+    private void checkSens(Set<ScimEventNotification> sens, String... feedUrisArray) {
         assertTrue(sens.size() == feedUrisArray.length);
         Set<String> feedUris = new HashSet<String>(Arrays.asList(feedUrisArray));
         Iterator<ScimEventNotification> iter = sens.iterator();

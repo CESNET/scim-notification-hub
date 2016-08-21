@@ -1,50 +1,53 @@
 package dao;
 
-import core.*;
 import core.Feed;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
- * Created by xmauritz on 8/8/16.
+ * Interface for the feed DAO.
+ * Manages CRUD operations for the feed object.
+ *
+ * @author Jiri Mauritz
  */
 public interface FeedDao {
 
     /**
-     * Check the feed's identifiers according to the data storage.
-     * If there is match, no feed is updated.
-     * If there is more feeds in db, update them.
+     * Update the feed's identifiers according to the data storage.
+     * No feed object is updated.
      *
      * @param feeds to be updated
      */
     public void updateIdentifiers(Map<String, Feed> feeds);
 
     /**
-     * Deep update of the feed.
+     * Update the feed according to the storage.
+     * It is completely replaced by the storage feed, i.e. all previous data are discarded.
      *
      * @param feed to be updated
      */
     public void update(Feed feed);
 
     /**
-     * Store the inner state of the feed into data storage.
-     * Only subscriptions to this feed are stored, in case the subscribers have more subscriptions.
+     * Store the inner state of the feed into the storage.
+     * WARNING: all extra records in the storage are removed, i.e. scim event notifications and subscriptions.
+     * In case the subscribers have more subscriptions, only subscriptions that belongs to this feed are stored.
      *
-     * @param feed
+     * @param feed to be stored
      */
     public void storeState(Feed feed);
 
     /**
-     * Create a new feed without subscribers and messages.
-     * For storing subscribers and messages, use storeState().
+     * Create a new feed in the storage.
+     * No subscribers or messages are stored, use storeState() for storing them.
      *
      * @param feed to be created
      */
     public void create(Feed feed);
 
     /**
-     * Remove a new feed.
+     * Remove a feed from the storage.
+     * All scim event notifications and subscriptions are removed as well.
      *
      * @param feed to be removed
      */

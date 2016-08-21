@@ -14,9 +14,11 @@ import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.util.StringUtils;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -26,7 +28,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 
 /**
- * Test of the Manager class.
+ * Test of the Manager class when the core and dao layer is working together.
  *
  * @author Jiri Mauritz
  */
@@ -55,8 +57,8 @@ public class CorePlusDaoUnitTest {
         // load sen objects from files
         sens = new ArrayList<String>();
         for (String fileName : FILE_NAMES) {
-            List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()));
-            sens.add(String.join("\n", jsonLines));
+            List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()), Charset.defaultCharset());
+            sens.add(StringUtils.collectionToDelimitedString(jsonLines, "\n"));
         }
 
         // set up mocks
@@ -290,7 +292,7 @@ public class CorePlusDaoUnitTest {
         assertFalse(manager.removeSubscriber(SBSC1_ID));
     }
 
-    private void checkSens(Set<ScimEventNotification> sens, String ... feedUrisArray) {
+    private void checkSens(Set<ScimEventNotification> sens, String... feedUrisArray) {
         assertEquals(feedUrisArray.length, sens.size());
         Set<String> feedUris = new HashSet<String>(Arrays.asList(feedUrisArray));
         Iterator<ScimEventNotification> iter = sens.iterator();

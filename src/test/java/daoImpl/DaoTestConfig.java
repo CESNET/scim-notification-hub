@@ -10,7 +10,10 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import javax.sql.DataSource;
 
 /**
- * Created by xmauritz on 8/8/16.
+ * Configuration for the Core + DAO layer unit testing.
+ * Database operations enabled.
+ *
+ * @author Jiri Mauritz
  */
 @Configuration
 @Import(SpringConfig.class)

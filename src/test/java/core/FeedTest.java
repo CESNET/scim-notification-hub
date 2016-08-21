@@ -4,7 +4,9 @@ import org.codehaus.jackson.map.ObjectMapper;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.util.StringUtils;
 
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -32,8 +34,8 @@ public class FeedTest {
         ObjectMapper mapper = new ObjectMapper();
         // load sen objects from files
         for (String fileName : FILE_NAMES) {
-            List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()));
-            sens.add(mapper.readValue(String.join("\n", jsonLines), ScimEventNotification.class));
+            List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()), Charset.defaultCharset());
+            sens.add(mapper.readValue(StringUtils.collectionToDelimitedString(jsonLines, "\n"), ScimEventNotification.class));
         }
     }
 

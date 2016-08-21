@@ -2,7 +2,6 @@ package daoImpl;
 
 import core.*;
 import dao.SubscriberDao;
-import dao.SubscriptionDao;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -17,7 +16,9 @@ import java.util.*;
 
 
 /**
- * Created by xmauritz on 8/8/16.
+ * DAO for the subscriber object.
+ *
+ * @author Jiri Mauritz
  */
 @Named
 @Singleton
@@ -93,13 +94,13 @@ public class SubscriberDaoImpl implements SubscriberDao {
     public Set<Subscriber> getWebCallbackSubscribers(Feed feed) {
         if (feed == null) throw new NullPointerException("Feed cannot be null.");
         if (feed.getId() == null) throw new IllegalStateException("Feed is not stored yet.");
-            Set<Subscriber> subscribers = getAllForFeedWithMode(feed, SubscriptionModeEnum.webCallback);
+        Set<Subscriber> subscribers = getAllForFeedWithMode(feed, SubscriptionModeEnum.webCallback);
 
         // remove all poll subscribers
         Iterator iter = subscribers.iterator();
         while (iter.hasNext()) {
             if (typeOfSubscriber((Subscriber) iter.next(), feed).equals(SubscriptionModeEnum.poll)) {
-               iter.remove();
+                iter.remove();
             }
         }
         return subscribers;

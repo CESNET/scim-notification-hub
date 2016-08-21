@@ -18,9 +18,11 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.util.StringUtils;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.ResultSet;
@@ -32,7 +34,9 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.when;
 
 /**
- * Created by xmauritz on 8/8/16.
+ * Test of the Subscriber DAO implementation.
+ *
+ * @author Jiri Mauritz
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = DaoTestConfig.class)
@@ -81,8 +85,8 @@ public class SubscriberDaoImplTest {
         ObjectMapper mapper = new ObjectMapper();
         // load sen objects from files
         for (String fileName : FILE_NAMES) {
-            List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()));
-            sens.add(mapper.readValue(String.join("\n", jsonLines), ScimEventNotification.class));
+            List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()), Charset.defaultCharset());
+            sens.add(mapper.readValue(StringUtils.collectionToDelimitedString(jsonLines, "\n"), ScimEventNotification.class));
         }
     }
 

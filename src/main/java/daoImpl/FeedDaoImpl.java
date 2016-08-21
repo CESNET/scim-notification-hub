@@ -17,7 +17,9 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
- * Created by xmauritz on 8/11/16.
+ * DAO for the feed object.
+ *
+ * @author Jiri Mauritz
  */
 @Named
 @Singleton
@@ -173,12 +175,17 @@ public class FeedDaoImpl implements FeedDao {
     public void remove(Feed feed) {
         if (feed == null) throw new NullPointerException("Feed cannot be null");
         if (feed.getId() == null) throw new IllegalStateException("Feed is not stored yet.");
-        // remove sens
-        for (Long senId : senDao.getIdsForFeed(feed)) {
-            senDao.removeSen(senId);
+        Set<Long> senIds = senDao.getIdsForFeed(feed);
+        // remove sen-feed relationships
+        String SQL = "DELETE FROM feed_sen WHERE feedId=?";
+        jdbcTemplate.update(SQL, feed.getId());
+        // remove sens that has no foreign key in feed_sen
+        for (Long senId : senIds) {
+            SQL = "DELETE FROM scim_event_notification WHERE id=? AND NOT EXISTS (SELECT * FROM feed_sen WHERE senId=?)";
+            jdbcTemplate.update(SQL, senId, senId);
         }
         // remove the feed itself
-        String SQL = "DELETE FROM " + TABLE_NAME + " WHERE id=?";
+        SQL = "DELETE FROM " + TABLE_NAME + " WHERE id=?";
         int rows = jdbcTemplate.update(SQL, feed.getId());
         if (rows > 1) throw new IllegalStateException("More than one feed removed.");
     }
