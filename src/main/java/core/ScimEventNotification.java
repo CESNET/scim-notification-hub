@@ -25,6 +25,9 @@ public class ScimEventNotification implements java.io.Serializable {
     private Set<String> attributes;
     private Map<String, Object> values;
 
+    public ScimEventNotification() {
+    }
+
     @JsonCreator
     public ScimEventNotification(
             @JsonProperty("schemas") final Set<String> schemas,

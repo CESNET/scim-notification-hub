@@ -53,20 +53,20 @@ public class ScimEventNotificationDaoImpl {
             // store feed - sen relationship
             storeFeedSenRelationship(sen, feedId, prevMsgId);
             // store attributes
-            storeMultipleRowsForSen("sen_attribute", "name", sen.getId(), sen.getAttributes());
+            storeMultipleRowsForSen("scim_sen_attribute", "name", sen.getId(), sen.getAttributes());
             // store resource uris
-            storeMultipleRowsForSen("sen_resource_uri", "uri", sen.getId(), sen.getResourceUris());
+            storeMultipleRowsForSen("scim_sen_resource_uri", "uri", sen.getId(), sen.getResourceUris());
             // store schemas
             Set<String> schemasToStore = new HashSet<String>(sen.getSchemas());
             schemasToStore.remove(ScimEventNotification.EVENT_SCHEMA); // remove the EVENT_SCHEMA, it's in all
-            storeMultipleRowsForSen("sen_schema", "name", sen.getId(), schemasToStore);
+            storeMultipleRowsForSen("scim_sen_schema", "name", sen.getId(), schemasToStore);
 
         } else {
             // sen is already stored
-            int records = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM feed_sen WHERE feedId=? AND senId=?", Integer.class, feedId, sen.getId());
+            int records = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM scim_feed_sen WHERE feed_id=? AND sen_id=?", Integer.class, feedId, sen.getId());
             if (records > 0) {
                 // feed has already record of sen -> just update value
-                String SQL = "UPDATE feed_sen SET prevMsgId=? WHERE feedId=? AND senId=?";
+                String SQL = "UPDATE scim_feed_sen SET prev_msg_id=? WHERE feed_id=? AND sen_id=?";
                 jdbcTemplate.update(SQL, prevMsgId, feedId, sen.getId());
             } else {
                 // feed has no record of sen -> create new
@@ -86,7 +86,7 @@ public class ScimEventNotificationDaoImpl {
         if (senId == null) throw new NullPointerException("ScimEventNotification id cannot be null.");
 
         // remove feed uris
-        String SQL = "DELETE FROM feed_sen WHERE senId=?";
+        String SQL = "DELETE FROM scim_feed_sen WHERE sen_id=?";
         jdbcTemplate.update(SQL, senId);
 
         // remove sen row
@@ -105,8 +105,8 @@ public class ScimEventNotificationDaoImpl {
     public Set<Long> getIdsForFeed(Feed feed) {
         if (feed == null) throw new NullPointerException("Feed cannot be null.");
         if (feed.getId() == null) throw new IllegalStateException("Feed is not stored.");
-        String SQL = "SELECT id FROM " + TABLE_NAME + " JOIN feed_sen ON scim_event_notification.id=feed_sen.senId " +
-                " WHERE feed_sen.feedId=?";
+        String SQL = "SELECT id FROM " + TABLE_NAME + " JOIN scim_feed_sen ON scim_event_notification.id=scim_feed_sen.sen_id " +
+                " WHERE scim_feed_sen.feed_id=?";
         return new HashSet<Long>(jdbcTemplate.queryForList(SQL, Long.class, feed.getId()));
     }
 
@@ -125,30 +125,36 @@ public class ScimEventNotificationDaoImpl {
         if (!rs.next()) throw new IllegalStateException("ScimEventNotification is not stored.");
 
         // get schemas
-        SQL = "SELECT name FROM sen_schema WHERE senId=?";
+        SQL = "SELECT name FROM scim_sen_schema WHERE sen_id=?";
         Set<String> schemas = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
         schemas.add(ScimEventNotification.EVENT_SCHEMA);
 
         // get feed uris
-        SQL = "SELECT feed.uri FROM feed JOIN feed_sen ON feed.id=feed_sen.feedId WHERE senId=?";
+        SQL = "SELECT scim_feed.uri FROM scim_feed JOIN scim_feed_sen ON scim_feed.id=scim_feed_sen.feed_id WHERE sen_id=?";
         Set<String> feedUris = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
 
         // get publisher uri
-        String publisherUri = rs.getString("publisherUri");
+        String publisherUri = rs.getString("publisher_uri");
 
         // get resource uris
-        SQL = "SELECT uri FROM sen_resource_uri WHERE senId=?";
+        SQL = "SELECT uri FROM scim_sen_resource_uri WHERE sen_id=?";
         Set<String> resourceUris = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
 
         // get type
         String type = rs.getString("type");
 
         // get attributes
-        SQL = "SELECT name FROM sen_attribute WHERE senId=?";
+        SQL = "SELECT name FROM scim_sen_attribute WHERE sen_id=?";
         Set<String> attributes = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
 
         // get values
-        String json = getStringOutOfClob(rs.getObject("sen_values"));
+        Object senValues = rs.getObject("sen_values");
+        String json;
+        if (senValues instanceof Clob) {
+            json = getStringOutOfClob(senValues);
+        } else {
+            json = (String) senValues;
+        }
         ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> values;
         try {
@@ -179,7 +185,7 @@ public class ScimEventNotificationDaoImpl {
         if (feed == null) throw new NullPointerException("Feed cannot be null.");
         if (sen.getId() == null) throw new IllegalStateException("ScimEventNotification is not stored.");
         if (feed.getId() == null) throw new IllegalStateException("Feed is not stored.");
-        String SQL = "SELECT prevMsgId FROM feed_sen WHERE senId=? AND feedId=?";
+        String SQL = "SELECT prev_msg_id FROM scim_feed_sen WHERE sen_id=? AND feed_id=?";
         return jdbcTemplate.queryForObject(SQL, Long.class, sen.getId(), feed.getId());
     }
 
@@ -189,7 +195,7 @@ public class ScimEventNotificationDaoImpl {
     private void storePureSen(ScimEventNotification sen) {
         ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> params = new HashMap<String, Object>();
-        params.put("publisherUri", sen.getPublisherUri());
+        params.put("publisher_uri", sen.getPublisherUri());
         params.put("type", sen.getType().name());
         try {
             params.put("sen_values", mapper.writeValueAsString(sen.getValues()));
@@ -204,10 +210,10 @@ public class ScimEventNotificationDaoImpl {
     private void storeFeedSenRelationship(ScimEventNotification sen, Long feedId, Long prevMsgId) {
         Map<String, Object> params = new HashMap<String, Object>();
         params.clear();
-        params.put("feedId", feedId);
-        params.put("senId", sen.getId());
-        params.put("prevMsgId", prevMsgId);
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("feed_sen");
+        params.put("feed_id", feedId);
+        params.put("sen_id", sen.getId());
+        params.put("prev_msg_id", prevMsgId);
+        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("scim_feed_sen");
         jdbcInsert.execute(params);
     }
 
@@ -217,7 +223,7 @@ public class ScimEventNotificationDaoImpl {
         for (String value : values) {
             params.clear();
             params.put(columnName, value);
-            params.put("senId", senId);
+            params.put("sen_id", senId);
             jdbcInsert.execute(params);
         }
     }

@@ -5,3 +5,6 @@
 # maven
 target/
 lib/
+
+# properties
+src/main/resources/*.properties

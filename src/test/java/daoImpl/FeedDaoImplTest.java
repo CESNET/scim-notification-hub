@@ -111,7 +111,7 @@ public class FeedDaoImplTest {
 
     @After
     public void tearDown() throws Exception {
-        Resource drop = new ClassPathResource("sql/dropTablesDerby.sql");
+        Resource drop = new ClassPathResource("sql/dropTables.sql");
         ScriptUtils.executeSqlScript(dataSource.getConnection(), drop);
     }
 
@@ -407,7 +407,7 @@ public class FeedDaoImplTest {
     /* ========= PRIVATE METHODS ================== */
 
     private void storeSlowestSubscriber(Long feedId, Long subscriberId) {
-        String SQL = "UPDATE feed SET slowestSubscriberId=? WHERE id=?";
+        String SQL = "UPDATE scim_feed SET slowest_subscriber_id=? WHERE id=?";
         jdbcTemplate.update(SQL, feedId, subscriberId);
     }
 
@@ -419,12 +419,12 @@ public class FeedDaoImplTest {
                 return feed;
             }
         }
-        String SQL = "SELECT * FROM feed WHERE id=?";
+        String SQL = "SELECT * FROM scim_feed WHERE id=?";
         return jdbcTemplate.queryForObject(SQL, new FeedMapper(), id);
     }
 
     private void assertSubscriptionNotInDb(Subscription subscription) {
-        String SQL = "SELECT COUNT(*) FROM subscription WHERE id=?";
+        String SQL = "SELECT COUNT(*) FROM scim_subscription WHERE id=?";
         assertEquals(0, jdbcTemplate.queryForObject(SQL, Integer.class, subscription.getId()).intValue());
     }
 

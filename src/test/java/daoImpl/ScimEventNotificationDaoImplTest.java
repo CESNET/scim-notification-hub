@@ -79,7 +79,7 @@ public class ScimEventNotificationDaoImplTest {
 
     @After
     public void tearDown() throws Exception {
-        Resource drop = new ClassPathResource("sql/dropTablesDerby.sql");
+        Resource drop = new ClassPathResource("sql/dropTables.sql");
         ScriptUtils.executeSqlScript(dataSource.getConnection(), drop);
     }
 
@@ -217,27 +217,27 @@ public class ScimEventNotificationDaoImplTest {
         if (!rs.next()) throw new IllegalStateException("ScimEventNotification is not stored.");
 
         // get schemas
-        SQL = "SELECT name FROM sen_schema WHERE senId=?";
-        Set<String> schemas = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
+        SQL = "SELECT name FROM scim_sen_schema WHERE sen_id=?";
+        Set<String> schemas = new HashSet<>(jdbcTemplate.queryForList(SQL, String.class, id));
         schemas.add(ScimEventNotification.EVENT_SCHEMA);
 
         // get feed uris
-        SQL = "SELECT feed.uri FROM feed JOIN feed_sen ON feed.id=feed_sen.feedId WHERE senId=?";
-        Set<String> feedUris = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
+        SQL = "SELECT scim_feed.uri FROM scim_feed JOIN scim_feed_sen ON scim_feed.id=scim_feed_sen.feed_id WHERE sen_id=?";
+        Set<String> feedUris = new HashSet<>(jdbcTemplate.queryForList(SQL, String.class, id));
 
         // get publisher uri
-        String publisherUri = rs.getString("publisherUri");
+        String publisherUri = rs.getString("publisher_uri");
 
         // get resource uris
-        SQL = "SELECT uri FROM sen_resource_uri WHERE senId=?";
-        Set<String> resourceUris = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
+        SQL = "SELECT uri FROM scim_sen_resource_uri WHERE sen_id=?";
+        Set<String> resourceUris = new HashSet<>(jdbcTemplate.queryForList(SQL, String.class, id));
 
         // get type
         String type = rs.getString("type");
 
         // get attributes
-        SQL = "SELECT name FROM sen_attribute WHERE senId=?";
-        Set<String> attributes = new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class, id));
+        SQL = "SELECT name FROM scim_sen_attribute WHERE sen_id=?";
+        Set<String> attributes = new HashSet<>(jdbcTemplate.queryForList(SQL, String.class, id));
 
         // get values
         String json = getStringOutOfClob(rs.getObject("sen_values"));
@@ -278,7 +278,7 @@ public class ScimEventNotificationDaoImplTest {
     }
 
     private Long getPrevMsgId(ScimEventNotification sen, Feed feed) {
-        String SQL = "SELECT prevMsgId FROM feed_sen WHERE feedId=? AND senId=?";
+        String SQL = "SELECT prev_msg_id FROM scim_feed_sen WHERE feed_id=? AND sen_id=?";
         return jdbcTemplate.queryForObject(SQL, Long.class, feed.getId(), sen.getId());
 
     }

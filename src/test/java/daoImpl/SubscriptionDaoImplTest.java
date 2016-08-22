@@ -70,7 +70,7 @@ public class SubscriptionDaoImplTest {
 
     @After
     public void tearDown() throws Exception {
-        Resource drop = new ClassPathResource("sql/dropTablesDerby.sql");
+        Resource drop = new ClassPathResource("sql/dropTables.sql");
         ScriptUtils.executeSqlScript(dataSource.getConnection(), drop);
     }
 
@@ -207,14 +207,14 @@ public class SubscriptionDaoImplTest {
                 Subscription subscription = new Subscription(
                         rs.getString("uri"),
                         SubscriptionModeEnum.valueOf(rs.getString("mode")),
-                        rs.getString("eventUri"));
+                        rs.getString("event_uri"));
                 subscription.setId(rs.getLong("id"));
                 return subscription;
             }
         }
         if (id == null) throw new IllegalStateException("Subscription is not stored.");
-        String SQL = "SELECT * FROM subscription  JOIN feed ON subscription.feedId=feed.id " +
-                "WHERE subscription.id=" + id;
+        String SQL = "SELECT * FROM scim_subscription  JOIN scim_feed ON scim_subscription.feed_id=scim_feed.id " +
+                "WHERE scim_subscription.id=" + id;
         return jdbcTemplate.queryForObject(SQL, new SubscriptionMapper());
     }
 }

@@ -1,23 +1,23 @@
 CREATE TABLE scim_subscriber (
-  id         BIGINT       NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  id         SERIAL PRIMARY KEY,
   identifier VARCHAR(512) NOT NULL UNIQUE
 );
 
 CREATE TABLE scim_feed (
-  id                  BIGINT        NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  id                  SERIAL PRIMARY KEY,
   uri                 VARCHAR(2083) NOT NULL UNIQUE,
   slowest_subscriber_id BIGINT REFERENCES scim_subscriber (id)
 );
 
 CREATE TABLE scim_event_notification (
-  id           BIGINT        NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  id           SERIAL PRIMARY KEY,
   publisher_uri VARCHAR(2083) NOT NULL,
   type         VARCHAR(64)   NOT NULL,
-  sen_values   CLOB          NOT NULL
+  sen_values   TEXT          NOT NULL
 );
 
 CREATE TABLE scim_subscription (
-  id           BIGINT        NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  id           SERIAL PRIMARY KEY,
   mode         VARCHAR(64)   NOT NULL,
   event_uri     VARCHAR(2083) NOT NULL,
   last_seen_msg  BIGINT REFERENCES scim_event_notification (id),
@@ -42,7 +42,7 @@ CREATE TABLE scim_sen_attribute (
 
 CREATE TABLE scim_sen_resource_uri (
   uri   VARCHAR(512) NOT NULL,
-  sen_Id BIGINT       NOT NULL REFERENCES scim_event_notification (id)
+  sen_id BIGINT       NOT NULL REFERENCES scim_event_notification (id)
     ON DELETE CASCADE
 );
 

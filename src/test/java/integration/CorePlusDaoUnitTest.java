@@ -55,7 +55,7 @@ public class CorePlusDaoUnitTest {
     @Before
     public void setUp() throws Exception {
         // load sen objects from files
-        sens = new ArrayList<String>();
+        sens = new ArrayList<>();
         for (String fileName : FILE_NAMES) {
             List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()), Charset.defaultCharset());
             sens.add(StringUtils.collectionToDelimitedString(jsonLines, "\n"));
@@ -63,15 +63,11 @@ public class CorePlusDaoUnitTest {
 
         // set up mocks
         MockitoAnnotations.initMocks(this);
-
-        // load db tables
-        Resource create = new ClassPathResource("sql/createTablesDerby.sql");
-        ScriptUtils.executeSqlScript(dataSource.getConnection(), create);
     }
 
     @After
     public void tearDown() throws Exception {
-        Resource drop = new ClassPathResource("sql/dropTablesDerby.sql");
+        Resource drop = new ClassPathResource("sql/deleteTables.sql");
         ScriptUtils.executeSqlScript(dataSource.getConnection(), drop);
     }
 

@@ -72,16 +72,6 @@ public class IntegrationTest {
 
         // set up mocks
         MockitoAnnotations.initMocks(this);
-
-        // load db tables
-        Resource create = new ClassPathResource("sql/createTablesDerby.sql");
-        ScriptUtils.executeSqlScript(dataSource.getConnection(), create);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        Resource drop = new ClassPathResource("sql/dropTablesDerby.sql");
-        ScriptUtils.executeSqlScript(dataSource.getConnection(), drop);
     }
 
     @Test

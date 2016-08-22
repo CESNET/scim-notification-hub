@@ -92,7 +92,7 @@ public class SubscriberDaoImplTest {
 
     @After
     public void tearDown() throws Exception {
-        Resource drop = new ClassPathResource("sql/dropTablesDerby.sql");
+        Resource drop = new ClassPathResource("sql/dropTables.sql");
         ScriptUtils.executeSqlScript(dataSource.getConnection(), drop);
     }
 
@@ -275,15 +275,15 @@ public class SubscriberDaoImplTest {
             }
         }
         if (id == null) throw new IllegalStateException("Subscriber is not stored.");
-        String SQL = "SELECT * FROM subscriber WHERE id=" + id;
+        String SQL = "SELECT * FROM scim_subscriber WHERE id=" + id;
         return jdbcTemplate.queryForObject(SQL, new SubsciberMapper());
     }
 
     private Set<Long> getAllSubscriptionIdsForSubscriber(Subscriber subscriber) {
         if (subscriber == null) throw new NullPointerException("Subscriber cannot be null.");
         if (subscriber.getId() == null) throw new IllegalStateException("Subscriber is not stored yet.");
-        String SQL = "SELECT id FROM subscription WHERE subscriberId=?";
-        return new HashSet<Long>(jdbcTemplate.queryForList(SQL, Long.class, subscriber.getId()));
+        String SQL = "SELECT id FROM scim_subscription WHERE subscriber_id=?";
+        return new HashSet<>(jdbcTemplate.queryForList(SQL, Long.class, subscriber.getId()));
     }
 
 }

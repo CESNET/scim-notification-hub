@@ -31,29 +31,29 @@ public class DaoTestUtils {
     private JdbcTemplate jdbcTemplate;
 
     public void createSubscriberInDb(Subscriber subscriber) {
-        Map<String, Object> params = new HashMap<String, Object>();
+        Map<String, Object> params = new HashMap<>();
         params.put("identifier", subscriber.getIdentifier());
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("subscriber").usingGeneratedKeyColumns("id");
+        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("scim_subscriber").usingGeneratedKeyColumns("id");
         Number id = jdbcInsert.executeAndReturnKey(params);
         subscriber.setId(id.longValue());
     }
 
     public void createFeedInDb(Feed feed) {
-        Map<String, Object> params = new HashMap<String, Object>();
+        Map<String, Object> params = new HashMap<>();
         params.put("uri", feed.getUri());
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("feed").usingGeneratedKeyColumns("id");
+        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("scim_feed").usingGeneratedKeyColumns("id");
         Number id = jdbcInsert.executeAndReturnKey(params);
         feed.setId(id.longValue());
     }
 
     public void createSubscriptionInDb(Subscription subscription, Feed feed, Subscriber subscriber, Long lastSeenMsg) {
-        Map<String, Object> params = new HashMap<String, Object>();
+        Map<String, Object> params = new HashMap<>();
         params.put("mode", subscription.getMode().name());
-        params.put("eventUri", subscription.getEventUri());
-        params.put("subscriberId", subscriber.getId());
-        params.put("feedId", feed.getId());
-        params.put("lastSeenMsg", lastSeenMsg);
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("subscription").usingGeneratedKeyColumns("id");
+        params.put("event_uri", subscription.getEventUri());
+        params.put("subscriber_id", subscriber.getId());
+        params.put("feed_id", feed.getId());
+        params.put("last_seen_msg", lastSeenMsg);
+        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("scim_subscription").usingGeneratedKeyColumns("id");
         Number id = jdbcInsert.executeAndReturnKey(params);
         subscription.setId(id.longValue());
     }
@@ -65,19 +65,19 @@ public class DaoTestUtils {
             // store feed - sen relationship
             storeFeedSenRelationship(sen, feedId, prevMsgId);
             // store attributes
-            storeMultipleRowsForSen("sen_attribute", "name", sen.getId(), sen.getAttributes());
+            storeMultipleRowsForSen("scim_sen_attribute", "name", sen.getId(), sen.getAttributes());
             // store resource uris
-            storeMultipleRowsForSen("sen_resource_uri", "uri", sen.getId(), sen.getResourceUris());
+            storeMultipleRowsForSen("scim_sen_resource_uri", "uri", sen.getId(), sen.getResourceUris());
             // store schemas
             Set<String> schemasToStore = new HashSet<>(sen.getSchemas());
             schemasToStore.remove(ScimEventNotification.EVENT_SCHEMA); // remove the EVENT_SCHEMA, it's in all
-            storeMultipleRowsForSen("sen_schema", "name", sen.getId(), schemasToStore);
+            storeMultipleRowsForSen("scim_sen_schema", "name", sen.getId(), schemasToStore);
         } else {
             // sen is already stored
-            int records = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM feed_sen WHERE feedId=? AND senId=?", Integer.class, feedId, sen.getId());
+            int records = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM scim_feed_sen WHERE feed_id=? AND sen_id=?", Integer.class, feedId, sen.getId());
             if (records > 0) {
                 // feed has already record of sen -> just update value
-                String SQL = "UPDATE feed_sen SET prevMsgId=? WHERE feedId=? AND senId=?";
+                String SQL = "UPDATE feed_sen SET prev_msg_id=? WHERE feed_id=? AND sen_id=?";
                 jdbcTemplate.update(SQL, prevMsgId, feedId, sen.getId());
             } else {
                 // feed has no record of sen -> create new
@@ -88,8 +88,8 @@ public class DaoTestUtils {
 
     private void storePureSen(ScimEventNotification sen) {
         ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("publisherUri", sen.getPublisherUri());
+        Map<String, Object> params = new HashMap<>();
+        params.put("publisher_uri", sen.getPublisherUri());
         params.put("type", sen.getType().name());
         try {
             params.put("sen_values", mapper.writeValueAsString(sen.getValues()));
@@ -102,22 +102,22 @@ public class DaoTestUtils {
     }
 
     private void storeFeedSenRelationship(ScimEventNotification sen, Long feedId, Long prevMsgId) {
-        Map<String, Object> params = new HashMap<String, Object>();
+        Map<String, Object> params = new HashMap<>();
         params.clear();
-        params.put("feedId", feedId);
-        params.put("senId", sen.getId());
-        params.put("prevMsgId", prevMsgId);
-        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("feed_sen");
+        params.put("feed_id", feedId);
+        params.put("sen_id", sen.getId());
+        params.put("prev_msg_id", prevMsgId);
+        SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("scim_feed_sen");
         jdbcInsert.execute(params);
     }
 
     private void storeMultipleRowsForSen(String tableName, String columnName, Long senId, Set<String> values) {
         SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName(tableName);
-        Map<String, Object> params = new HashMap<String, Object>();
+        Map<String, Object> params = new HashMap<>();
         for (String value : values) {
             params.clear();
             params.put(columnName, value);
-            params.put("senId", senId);
+            params.put("sen_id", senId);
             jdbcInsert.execute(params);
         }
     }

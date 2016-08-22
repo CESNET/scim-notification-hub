@@ -33,12 +33,13 @@ public class ManagerImpl implements Manager {
     private SubscriptionDao subscriptionDao;
 
     // feed uri mapped on the feed object
-    Map<String, Feed> feeds = new HashMap<String, Feed>();
+    private Map<String, Feed> feeds = new HashMap<String, Feed>();
 
     // subscriber identificator mapped on the subscriber object
-    Map<String, Subscriber> subscribers = new HashMap<String, Subscriber>();
+    private Map<String, Subscriber> subscribers = new HashMap<String, Subscriber>();
 
 
+    @Override
     public void newMessage(String json) {
         if (json == null) throw new IllegalArgumentException("Json cannot be null.");
         // String -> JSON
@@ -69,6 +70,7 @@ public class ManagerImpl implements Manager {
         webCallbackSend(subscribersToBeNotified, sen);
     }
 
+    @Override
     public void newSubscription(String subscriberId, String feedUri, SubscriptionModeEnum mode, String eventUri) {
         if (subscriberId == null) throw new NullPointerException("SubscriberId cannot be null.");
         if (feedUri == null) throw new NullPointerException("FeedUri cannot be null.");
@@ -104,6 +106,7 @@ public class ManagerImpl implements Manager {
         subscriptionDao.create(subscription, subscriber, feed);
     }
 
+    @Override
     public boolean removeSubscription(String subscriberIdentifier, String feedUri) {
         if (subscriberIdentifier == null) throw new NullPointerException("SubscriberId cannot be null.");
         if (feedUri == null) throw new NullPointerException("FeedUri cannot be null.");
@@ -137,6 +140,7 @@ public class ManagerImpl implements Manager {
         return false;
     }
 
+    @Override
     public boolean removeSubscriber(String subscriberId) {
         if (subscriberId == null) throw new NullPointerException("SubscriberId cannot be null.");
         subscriberDao.update(subscribers);
@@ -163,6 +167,7 @@ public class ManagerImpl implements Manager {
         return true;
     }
 
+    @Override
     public Set<ScimEventNotification> poll(String subscriberIdentifier) {
         if (subscriberIdentifier == null) throw new IllegalArgumentException("Subscriber's identifier cannot be null.");
         subscriberDao.update(subscribers);

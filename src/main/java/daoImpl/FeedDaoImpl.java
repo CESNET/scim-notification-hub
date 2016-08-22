@@ -25,7 +25,7 @@ import java.util.*;
 @Singleton
 public class FeedDaoImpl implements FeedDao {
 
-    private static final String TABLE_NAME = "feed";
+    private static final String TABLE_NAME = "scim_feed";
 
     @Inject
     private JdbcTemplate jdbcTemplate;
@@ -48,6 +48,7 @@ public class FeedDaoImpl implements FeedDao {
         }
     }
 
+    @Override
     public void updateIdentifiers(Map<String, Feed> feeds) {
         if (feeds == null) throw new NullPointerException("Feeds cannot be null.");
         Set<String> urisMemory = feeds.keySet();
@@ -68,6 +69,7 @@ public class FeedDaoImpl implements FeedDao {
         }
     }
 
+    @Override
     public void update(Feed feed) {
         if (feed == null) throw new NullPointerException("Feed cannot be null.");
         if (feed.getId() == null) throw new IllegalStateException("Feed is not stored.");
@@ -111,6 +113,7 @@ public class FeedDaoImpl implements FeedDao {
         feed.setMessages(messages);
     }
 
+    @Override
     public void storeState(Feed feed) {
         if (feed == null) throw new NullPointerException("Feed cannot be null.");
         if (feed.getId() == null) throw new IllegalStateException("Feed must be created before storing.");
@@ -162,26 +165,28 @@ public class FeedDaoImpl implements FeedDao {
         }
     }
 
+    @Override
     public void create(Feed feed) {
         if (feed == null) throw new NullPointerException("Feed cannot be null");
         if (feed.getId() != null) throw new IllegalStateException("Feed is already stored.");
-        Map<String, Object> params = new HashMap<String, Object>();
+        Map<String, Object> params = new HashMap<>();
         params.put("uri", feed.getUri());
         SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName(TABLE_NAME).usingGeneratedKeyColumns("id");
         Number id = jdbcInsert.executeAndReturnKey(params);
         feed.setId(id.longValue());
     }
 
+    @Override
     public void remove(Feed feed) {
         if (feed == null) throw new NullPointerException("Feed cannot be null");
         if (feed.getId() == null) throw new IllegalStateException("Feed is not stored yet.");
         Set<Long> senIds = senDao.getIdsForFeed(feed);
         // remove sen-feed relationships
-        String SQL = "DELETE FROM feed_sen WHERE feedId=?";
+        String SQL = "DELETE FROM scim_feed_sen WHERE feed_id=?";
         jdbcTemplate.update(SQL, feed.getId());
         // remove sens that has no foreign key in feed_sen
         for (Long senId : senIds) {
-            SQL = "DELETE FROM scim_event_notification WHERE id=? AND NOT EXISTS (SELECT * FROM feed_sen WHERE senId=?)";
+            SQL = "DELETE FROM scim_event_notification WHERE id=? AND NOT EXISTS (SELECT * FROM scim_feed_sen WHERE sen_id=?)";
             jdbcTemplate.update(SQL, senId, senId);
         }
         // remove the feed itself
@@ -195,7 +200,7 @@ public class FeedDaoImpl implements FeedDao {
 
     private Set<String> getFeedUris() {
         String SQL = "SELECT uri FROM " + TABLE_NAME;
-        return new HashSet<String>(jdbcTemplate.queryForList(SQL, String.class));
+        return new HashSet<>(jdbcTemplate.queryForList(SQL, String.class));
     }
 
     private Feed getByUri(String uri) {
@@ -204,8 +209,8 @@ public class FeedDaoImpl implements FeedDao {
     }
 
     private Subscriber getSlowestSubscriber(Feed feed) {
-        String SQL = "SELECT * FROM " + TABLE_NAME + " JOIN subscriber ON feed.slowestSubscriberId=subscriber.id" +
-                " WHERE feed.id=?";
+        String SQL = "SELECT * FROM " + TABLE_NAME + " JOIN scim_subscriber ON " +
+                "scim_feed.slowest_subscriber_id=scim_subscriber.id WHERE scim_feed.id=?";
         Subscriber subscriber;
         try {
             subscriber = jdbcTemplate.queryForObject(SQL, new SubscriberDaoImpl.SubsciberMapper(), feed.getId());
@@ -217,7 +222,7 @@ public class FeedDaoImpl implements FeedDao {
     }
 
     private void storeSlowestSubscriber(Feed feed) {
-        String SQL = "UPDATE " + TABLE_NAME + " SET slowestSubscriberId=? WHERE id=?";
+        String SQL = "UPDATE " + TABLE_NAME + " SET slowest_subscriber_id=? WHERE id=?";
         jdbcTemplate.update(SQL, feed.getSlowestPollSubscriber() == null ? null : feed.getSlowestPollSubscriber().getId(), feed.getId());
     }
 }
