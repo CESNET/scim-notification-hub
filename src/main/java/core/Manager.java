@@ -59,4 +59,19 @@ public interface Manager {
      * @return set of all new messages to be send to the subscriber
      */
     public Set<ScimEventNotification> poll(String subscriberId);
+
+    /**
+     * Retrieve identifiers of all subscribers.
+     *
+     * @return set of all identifiers
+     */
+    public Set<String> getSubscriberIdentifiers();
+
+    /**
+     * Retrieve subscriber according to his identifier.
+     *
+     * @param identifier of the subcriber
+     * @return subscriber
+     */
+    public Subscriber getSubscriberByIdentifier(String identifier);
 }

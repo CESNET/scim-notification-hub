@@ -61,7 +61,7 @@ public class ManagerImplTest {
     @Before
     public void setUp() throws Exception {
         // load sen objects from files
-        sens = new ArrayList<String>();
+        sens = new ArrayList<>();
         for (String fileName : FILE_NAMES) {
             List<String> jsonLines = Files.readAllLines(Paths.get(ClassLoader.getSystemResource(fileName).toURI()), Charset.defaultCharset());
             sens.add(StringUtils.collectionToDelimitedString(jsonLines, "\n"));
@@ -78,7 +78,7 @@ public class ManagerImplTest {
         // verify
         ObjectMapper mapper = new ObjectMapper();
         ScimEventNotification sen = mapper.readValue(sens.get(0), ScimEventNotification.class);
-        verify(manager).webCallbackSend(new HashSet<Subscriber>(), sen);
+        verify(manager).webCallbackSend(new HashSet<String>(), sen);
     }
 
     @Test
@@ -91,7 +91,7 @@ public class ManagerImplTest {
         // verify
         ObjectMapper mapper = new ObjectMapper();
         ScimEventNotification sen = mapper.readValue(sens.get(0), ScimEventNotification.class);
-        verify(manager).webCallbackSend(new HashSet<Subscriber>(Arrays.asList(sbcs1)), sen);
+        verify(manager).webCallbackSend(new HashSet<>(Arrays.asList(FEED1)), sen);
     }
 
     @Test
@@ -110,13 +110,13 @@ public class ManagerImplTest {
         ScimEventNotification sen2 = mapper.readValue(sens.get(1), ScimEventNotification.class);
 
         // verify
-        verify(manager).webCallbackSend(new HashSet<Subscriber>(Arrays.asList(sbcs1)), sen1);
+        verify(manager).webCallbackSend(new HashSet<>(Arrays.asList(FEED1)), sen1);
 
         // new message
         manager.newMessage(sens.get(1));
 
         // verify
-        verify(manager).webCallbackSend(new HashSet<Subscriber>(Arrays.asList(sbcs1, sbcs2)), sen2);
+        verify(manager).webCallbackSend(new HashSet<>(Arrays.asList(FEED1, FEED2)), sen2);
     }
 
     @Test
@@ -290,9 +290,9 @@ public class ManagerImplTest {
 
     private void checkSens(Set<ScimEventNotification> sens, String... feedUrisArray) {
         assertTrue(sens.size() == feedUrisArray.length);
-        Set<String> feedUris = new HashSet<String>(Arrays.asList(feedUrisArray));
+        Set<String> feedUris = new HashSet<>(Arrays.asList(feedUrisArray));
         Iterator<ScimEventNotification> iter = sens.iterator();
-        Set<String> returnedFeedUris = new HashSet<String>();
+        Set<String> returnedFeedUris = new HashSet<>();
         while (iter.hasNext()) {
             returnedFeedUris.addAll(iter.next().getFeedUris());
         }

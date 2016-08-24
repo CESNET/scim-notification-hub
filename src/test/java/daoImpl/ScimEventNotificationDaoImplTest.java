@@ -55,7 +55,7 @@ public class ScimEventNotificationDaoImplTest {
     private static final String URIedu = "https://perun.cesnet.cz/scim-notification/eduroam/eduroam_radius";
     private static final String[] FILE_NAMES = new String[]{"sen1.json", "sen2.json", "sen3.json"};
 
-    private List<ScimEventNotification> sens = new ArrayList<ScimEventNotification>();
+    private List<ScimEventNotification> sens = new ArrayList<>();
     private Feed feed = new Feed(URImail);
     private Feed feedEdu = new Feed(URIedu);
 
@@ -101,7 +101,7 @@ public class ScimEventNotificationDaoImplTest {
     @Test(expected = IllegalStateException.class)
     public void removeSenTest() throws Exception {
         testUtils.createSenInDb(sens.get(0), feed.getId(), null);
-        senDao.removeSen(sens.get(0).getId());
+        senDao.removeSenFromFeed(sens.get(0).getId(), feed.getId());
         getById(sens.get(0).getId());
     }
 
@@ -155,12 +155,7 @@ public class ScimEventNotificationDaoImplTest {
 
     @Test(expected = NullPointerException.class)
     public void removeSenWithNullSenId() throws Exception {
-        senDao.removeSen(null);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void removeSenWithNonExistingSen() throws Exception {
-        senDao.removeSen(1l);
+        senDao.removeSenFromFeed(null, feed.getId());
     }
 
     @Test(expected = NullPointerException.class)

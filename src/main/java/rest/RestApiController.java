@@ -1,8 +1,7 @@
 package rest;
 
 
-import core.Manager;
-import core.SubscriptionModeEnum;
+import core.*;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.inject.Inject;
 
 import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Map;
+import java.util.Set;
 
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
@@ -29,24 +31,33 @@ public class RestApiController {
     @Inject
     private Manager manager;
 
+    private SecureRandom random = new SecureRandom();
 
-    // for now, we dont have any tool to get subscriber id, therefore there is just one
-    public static final String SBSC_ID = "id";
+    public static final String DOMAIN = "https://perun-dev.meta.zcu.cz/scim-notification-hub";
     public static final String WEB_CALLBACK = "urn:ietf:params:scimnotify:api:messages:2.0:webCallback";
     public static final String POLL = "urn:ietf:params:scimnotify:api:messages:2.0:poll";
 
+
+    @RequestMapping(value = "/Subscriptions/{sbscId}", method = GET)
+    public ResponseEntity<Subscription> getSubscription(@PathVariable("sbscId") String sbscId) {
+        Subscriber subscriber = manager.getSubscriberByIdentifier(sbscId);
+        Subscription subscription = subscriber.getSubscriptions().iterator().next();
+
+        return new ResponseEntity<>(subscription, HttpStatus.OK);
+    }
 
     /**
      * POST /Subscription
      * Create a new subscription.
      * The body of the request must follow the schema 'urn:ietf:params:scim:schemas:notify:2.0:Subscription'.
      *
-     * @param body
-     * @return
+     * @param body of the request containing the subscription
+     * @return status 201 or 400 if the subscription json is not valid
      */
-    @RequestMapping(value = "/Subscription", method = POST)
-    public ResponseEntity<String> subscription(@RequestBody String body) {
+    @RequestMapping(value = "/Subscriptions", method = POST)
+    public ResponseEntity<String> createSubscription(@RequestBody String body) {
         ObjectMapper mapper = new ObjectMapper();
+        String sbscId;
         try {
             Map<String, Object> json = (Map<String, Object>) mapper.readValue(body, Map.class);
             String feedUri = (String) json.get("feedUri");
@@ -54,29 +65,91 @@ public class RestApiController {
             SubscriptionModeEnum mode;
             if (POLL.equals(modeString)) {
                 mode = SubscriptionModeEnum.poll;
-            } else {
+            } else if (WEB_CALLBACK.equals(modeString)) {
                 mode = SubscriptionModeEnum.webCallback;
+            } else {
+                throw new IOException("Wrong subscription mode.");
             }
             String eventUri = (String) json.get("eventUri");
-            manager.newSubscription(SBSC_ID, feedUri, mode, eventUri);
+
+            // generate subscription id
+            sbscId = nextSubscriptionId();
+
+            manager.newSubscription(sbscId, feedUri, mode, eventUri);
         } catch (IOException | ClassCastException e) {
+            e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>("", HttpStatus.CREATED);
+        String response = "Location: \n" + DOMAIN + "/Subscriptions/" + sbscId;
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     /**
-     * POST /{feedUri}/Events
-     * Creates a new scim event notification.
-     * The feedUri is useless for now, because the sen is classified according to the feed uris attribute of the message.
+     * DELETE /Subscription/{identifier}
+     * Remvove the subscription, which means remove also the subscriber.
      *
-     * @param feedUri identification of the feed in URL, but not used for now
+     * @param sbscId subscription / subscriber identifier
+     * @return status 200 or 404 if not found
+     */
+    @RequestMapping(value = "/Subscriptions/{sbscId}", method = DELETE)
+    public ResponseEntity<String> deleteSubscription(@PathVariable("sbscId") String sbscId) {
+        try {
+            boolean deleted = manager.removeSubscriber(sbscId);
+            if (deleted) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+
+    /**
+     * POST /Events
+     * Creates a new scim event notification.
+     *
      * @param senJson scim event notification according to the schema 'urn:ietf:params:scim:schemas:notify:2.0:Event'
      * @return status 204
      */
-    @RequestMapping(value = "/{feedUri}/Events", method = POST)
-    public ResponseEntity<?> subscriber(@PathVariable("feedUri") String feedUri, @RequestBody String senJson) {
-        manager.newMessage(senJson);
+    @RequestMapping(value = "/Events", method = POST)
+    public ResponseEntity<?> createSubscriber(@RequestBody String senJson) {
+        try {
+            manager.newMessage(senJson);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    /**
+     * GET /Poll/{identifier}
+     * Perform poll of the messages for the specified subscription.
+     *
+     * @param sbscId subscription / subscriber identifier
+     * @return status 200
+     */
+    @RequestMapping(value = "/Poll/{sbscId}", method = GET)
+    public ResponseEntity<Set<ScimEventNotification>> poll(@PathVariable("sbscId") String sbscId) {
+        Set<ScimEventNotification> msgs;
+        try {
+            msgs = manager.poll(sbscId);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST); // TODO: add exception message to the response
+        }
+        return new ResponseEntity<>(msgs, HttpStatus.OK);
+    }
+
+    private String nextSubscriptionId() {
+        String identifier = new BigInteger(130, random).toString(25);
+        Set<String> alreadyCreatedIdentifiers = manager.getSubscriberIdentifiers();
+        while (alreadyCreatedIdentifiers.contains(identifier)) {
+            identifier = new BigInteger(130, random).toString(25);
+        }
+        return identifier;
     }
 }

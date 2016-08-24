@@ -2,13 +2,13 @@ package integration;
 
 import core.ManagerImpl;
 import core.ScimEventNotification;
-import core.Subscriber;
 import core.SubscriptionModeEnum;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.core.io.ClassPathResource;
@@ -26,8 +26,9 @@ import java.nio.file.Paths;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -74,6 +75,12 @@ public class IntegrationTest {
         MockitoAnnotations.initMocks(this);
     }
 
+    @After
+    public void tearDown() throws Exception {
+        Resource drop = new ClassPathResource("sql/deleteTables.sql");
+        ScriptUtils.executeSqlScript(dataSource.getConnection(), drop);
+    }
+
     @Test
     public void integrationTest() throws Exception {
         // two feeds and two subscribers
@@ -86,11 +93,13 @@ public class IntegrationTest {
         manager.newMessage(senJsons.get(0));
 
         // verify webcallback
-        verify(manager).webCallbackSend(new HashSet<>(Arrays.asList(new Subscriber(SBSC1_ID))), sens.get(0));
+        verify(manager).webCallbackSend(eq(new HashSet<>(Arrays.asList(FEEDedu))), any(ScimEventNotification.class));
 
         // poll of the first subscriber
         Set<ScimEventNotification> toSend = manager.poll(SBSC1_ID);
         assertEquals(1, toSend.size());
+        ScimEventNotification returned = toSend.iterator().next();
+        sens.get(0).setId(returned.getId());
         assertEquals(sens.get(0), toSend.iterator().next());
 
         // second message
@@ -101,6 +110,8 @@ public class IntegrationTest {
 
         // check message 2 is prepared for SBSC2
         toSend = manager.poll(SBSC2_ID);
+        returned = toSend.iterator().next();
+        sens.get(1).setId(returned.getId());
         assertEquals(new HashSet<>(Arrays.asList(sens.get(1))), toSend);
 
         // add next subscriber
@@ -111,6 +122,8 @@ public class IntegrationTest {
 
         // check msg 3 was returned to SBSC3
         toSend = manager.poll(SBSC3_ID);
+        returned = toSend.iterator().next();
+        sens.get(3).setId(returned.getId());
         assertEquals(new HashSet<>(Arrays.asList(sens.get(3))), toSend);
 
         // check no messages are prepared for SBSC2
@@ -118,9 +131,10 @@ public class IntegrationTest {
         assertEquals(new HashSet<>(), toSend);
 
         // next message
+        Mockito.reset(manager);
         manager.newMessage(senJsons.get(2));
         // verify webcallback
-        verify(manager).webCallbackSend(new HashSet<>(Arrays.asList(new Subscriber(SBSC1_ID))), sens.get(2));
+        verify(manager).webCallbackSend(eq(new HashSet<>(Arrays.asList(FEEDedu))), any(ScimEventNotification.class));
 
         // remove subscriber
         manager.removeSubscriber(SBSC3_ID);
@@ -134,6 +148,8 @@ public class IntegrationTest {
             // poll for the subscriber 2
             toSend = manager.poll(SBSC2_ID);
             assertEquals(1, toSend.size());
+            returned = toSend.iterator().next();
+            sens.get(2).setId(returned.getId());
             assertEquals(sens.get(2), toSend.iterator().next());
 
             // poll for the subscriber 1

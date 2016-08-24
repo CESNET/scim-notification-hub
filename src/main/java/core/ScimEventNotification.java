@@ -93,12 +93,9 @@ public class ScimEventNotification implements java.io.Serializable {
 
         ScimEventNotification that = (ScimEventNotification) o;
 
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
         if (!schemas.equals(that.schemas)) return false;
         if (!publisherUri.equals(that.publisherUri)) return false;
-        // at least one feed uri must be common
-        Set<String> common = new HashSet<>(this.feedUris);
-        common.retainAll(that.feedUris);
-        if (common.isEmpty()) return false;
         if (!resourceUris.equals(that.resourceUris)) return false;
         if (type != that.type) return false;
         if (!attributes.equals(that.attributes)) return false;
@@ -108,8 +105,8 @@ public class ScimEventNotification implements java.io.Serializable {
 
     @Override
     public int hashCode() {
-        int result = schemas.hashCode();
-        result = 31 * result + feedUris.hashCode();
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + schemas.hashCode();
         result = 31 * result + publisherUri.hashCode();
         result = 31 * result + resourceUris.hashCode();
         result = 31 * result + type.hashCode();

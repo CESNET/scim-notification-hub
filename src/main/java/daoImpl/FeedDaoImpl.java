@@ -55,13 +55,13 @@ public class FeedDaoImpl implements FeedDao {
         Set<String> urisDatabase = getFeedUris();
         if (urisDatabase.equals(urisMemory)) return;
         // remove
-        Set<String> toRemove = new HashSet<String>(urisMemory);
+        Set<String> toRemove = new HashSet<>(urisMemory);
         toRemove.removeAll(urisDatabase);
         for (String uri : toRemove) {
             feeds.remove(uri);
         }
         // add
-        Set<String> toAdd = new HashSet<String>(urisDatabase);
+        Set<String> toAdd = new HashSet<>(urisDatabase);
         toAdd.removeAll(urisMemory);
         for (String uri : toAdd) {
             Feed feed = getByUri(uri);
@@ -87,8 +87,8 @@ public class FeedDaoImpl implements FeedDao {
             feed.setMessages(new LinkedList<ScimEventNotification>());
             return;
         }
-        LinkedList<ScimEventNotification> messages = new LinkedList<ScimEventNotification>();
-        Map<Long, ScimEventNotification> queuePredecessors = new HashMap<Long, ScimEventNotification>();
+        LinkedList<ScimEventNotification> messages = new LinkedList<>();
+        Map<Long, ScimEventNotification> queuePredecessors = new HashMap<>();
         ScimEventNotification firstMsg = null;
         for (Long senId : idsForFeed) {
             ScimEventNotification sen = senDao.getById(senId);
@@ -159,10 +159,9 @@ public class FeedDaoImpl implements FeedDao {
             previousId = sen.getId();
             senIdsToRemove.remove(sen.getId());
         }
+
         // remove extra messages
-        for (Long senId : senIdsToRemove) {
-            senDao.removeSen(senId);
-        }
+        safelyRemoveMsgs(senIdsToRemove, feed.getId());
     }
 
     @Override
@@ -209,7 +208,7 @@ public class FeedDaoImpl implements FeedDao {
     }
 
     private Subscriber getSlowestSubscriber(Feed feed) {
-        String SQL = "SELECT * FROM " + TABLE_NAME + " JOIN scim_subscriber ON " +
+        String SQL = "SELECT scim_subscriber.id, scim_subscriber.identifier FROM " + TABLE_NAME + " JOIN scim_subscriber ON " +
                 "scim_feed.slowest_subscriber_id=scim_subscriber.id WHERE scim_feed.id=?";
         Subscriber subscriber;
         try {
@@ -224,5 +223,34 @@ public class FeedDaoImpl implements FeedDao {
     private void storeSlowestSubscriber(Feed feed) {
         String SQL = "UPDATE " + TABLE_NAME + " SET slowest_subscriber_id=? WHERE id=?";
         jdbcTemplate.update(SQL, feed.getSlowestPollSubscriber() == null ? null : feed.getSlowestPollSubscriber().getId(), feed.getId());
+    }
+
+    private void safelyRemoveMsgs(Set<Long> senIds, Long feedId) {
+        // messages have to be removed in the right order, not to cause DataViolationException
+        if (!senIds.isEmpty()) {
+            String SQL = "SELECT sen_id FROM scim_feed_sen WHERE prev_msg_id=? AND feed_id=?";
+
+            Long id = null;
+            Long nextMsgId;
+            while (!senIds.isEmpty()) {
+                if (id == null) {
+                  id = senIds.iterator().next();
+                }
+                try {
+                    nextMsgId = jdbcTemplate.queryForObject(SQL, Long.class, id, feedId);
+                    if (!senIds.contains(nextMsgId)) {
+                        senDao.removeSenFromFeed(id, feedId);
+                        senIds.remove(id);
+                        id = null;
+                    } else {
+                        id = nextMsgId;
+                    }
+                } catch (EmptyResultDataAccessException e) {
+                    senDao.removeSenFromFeed(id, feedId);
+                    senIds.remove(id);
+                    id = null;
+                }
+            }
+        }
     }
 }

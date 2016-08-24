@@ -86,7 +86,7 @@ public class FeedDaoImplTest {
     @Before
     public void setUp() throws Exception {
         // set local variables
-        sens = new ArrayList<ScimEventNotification>();
+        sens = new ArrayList<>();
         subscriber = new Subscriber("subid");
         feedMail = new Feed(URImail);
         feedEdu = new Feed(URIedu);
@@ -119,7 +119,7 @@ public class FeedDaoImplTest {
     public void updateIdentifiers() throws Exception {
         testUtils.createFeedInDb(feedMail);
         testUtils.createFeedInDb(feedEdu);
-        Map<String, Feed> feeds = new HashMap<String, Feed>();
+        Map<String, Feed> feeds = new HashMap<>();
         feeds.put(feedVpn.getUri(), feedVpn);
         feedDao.updateIdentifiers(feeds);
 
@@ -150,16 +150,16 @@ public class FeedDaoImplTest {
         testUtils.createSenInDb(sens.get(1), feedVpn.getId(), null);
 
         // mock methods
-        Map<Subscriber, ScimEventNotification> pollSubscribers = new HashMap<Subscriber, ScimEventNotification>();
+        Map<Subscriber, ScimEventNotification> pollSubscribers = new HashMap<>();
         pollSubscribers.put(subscriber, sens.get(0));
         when(subscriberDao.getPollSubscribers(feedMail)).thenReturn(pollSubscribers);
-        when(subscriberDao.getWebCallbackSubscribers(feedMail)).thenReturn(new HashSet<Subscriber>(Arrays.asList(sbsc)));
-        Set<Long> ids = new HashSet<Long>(Arrays.asList(sens.get(0).getId(), sens.get(1).getId(), sens.get(3).getId()));
+        when(subscriberDao.getWebCallbackSubscribers(feedMail)).thenReturn(new HashSet<>(Arrays.asList(sbsc)));
+        Set<Long> ids = new HashSet<>(Arrays.asList(sens.get(0).getId(), sens.get(1).getId(), sens.get(3).getId()));
         when(senDao.getIdsForFeed(feedMail)).thenReturn(ids);
         when(senDao.getById(anyLong())).thenAnswer(new Answer<ScimEventNotification>() {
             public ScimEventNotification answer(InvocationOnMock invocation) throws Throwable {
                 Object[] args = invocation.getArguments();
-                Map<Long, ScimEventNotification> senMap = new HashMap<Long, ScimEventNotification>();
+                Map<Long, ScimEventNotification> senMap = new HashMap<>();
                 senMap.put(sens.get(0).getId(), sens.get(0));
                 senMap.put(sens.get(1).getId(), sens.get(1));
                 senMap.put(sens.get(3).getId(), sens.get(3));
@@ -169,7 +169,7 @@ public class FeedDaoImplTest {
         when(senDao.getMessagePredecessor(any(ScimEventNotification.class), eq(feedMail))).thenAnswer(new Answer<Long>() {
             public Long answer(InvocationOnMock invocation) throws Throwable {
                 Object[] args = invocation.getArguments();
-                Map<ScimEventNotification, Long> predMap = new HashMap<ScimEventNotification, Long>();
+                Map<ScimEventNotification, Long> predMap = new HashMap<>();
                 predMap.put(sens.get(0), null);
                 predMap.put(sens.get(1), sens.get(0).getId());
                 predMap.put(sens.get(3), sens.get(1).getId());
@@ -204,7 +204,7 @@ public class FeedDaoImplTest {
         Subscription subPoll = new Subscription(feedMail.getUri(), SubscriptionModeEnum.poll, URImail);
         sbscPoll.addSubscription(subPoll);
         subscriber.addSubscription(subscription);
-        Map<Subscriber, ScimEventNotification> pollSubscribers = new HashMap<Subscriber, ScimEventNotification>();
+        Map<Subscriber, ScimEventNotification> pollSubscribers = new HashMap<>();
         pollSubscribers.put(subscriber, null);
         pollSubscribers.put(sbscPoll, sens.get(3));
         feedMail.setPollSubscribersLastMsg(pollSubscribers);
@@ -239,7 +239,7 @@ public class FeedDaoImplTest {
         Subscription subPoll = new Subscription(feedMail.getUri(), SubscriptionModeEnum.poll, URImail);
         sbscPoll.addSubscription(subPoll);
         subscriber.addSubscription(subscription);
-        Map<Subscriber, ScimEventNotification> pollSubscribers = new HashMap<Subscriber, ScimEventNotification>();
+        Map<Subscriber, ScimEventNotification> pollSubscribers = new HashMap<>();
         pollSubscribers.put(subscriber, null);
         pollSubscribers.put(sbscPoll, sens.get(3));
         feedMail.setPollSubscribersLastMsg(pollSubscribers);
@@ -253,7 +253,7 @@ public class FeedDaoImplTest {
         testUtils.createFeedInDb(feedMail);
 
         // store feed
-        Set<Long> ids = new HashSet<Long>(Arrays.asList(sens.get(0).getId(), 6874l));
+        Set<Long> ids = new HashSet<>(Arrays.asList(sens.get(0).getId(), 6874l));
         when(senDao.getIdsForFeed(feedMail)).thenReturn(ids);
         feedDao.storeState(feedMail);
 
@@ -268,7 +268,7 @@ public class FeedDaoImplTest {
         verify(senDao).storeSen(sens.get(0), feedMail.getId(), null);
         verify(senDao).storeSen(sens.get(1), feedMail.getId(), sens.get(0).getId());
         verify(senDao).storeSen(sens.get(3), feedMail.getId(), sens.get(1).getId());
-        verify(senDao).removeSen(6874l);
+        verify(senDao).removeSenFromFeed(6874l, feedMail.getId());
     }
 
     @Test
@@ -286,9 +286,9 @@ public class FeedDaoImplTest {
         storeSlowestSubscriber(feedMail.getId(), subscriber.getId());
 
         // mock methods
-        Set<Long> ids = new HashSet<Long>(Arrays.asList(subscription.getId(), sub.getId()));
+        Set<Long> ids = new HashSet<>(Arrays.asList(subscription.getId(), sub.getId()));
         when(subscriptionDao.getAllIdsForFeed(feedMail)).thenReturn(ids);
-        ids = new HashSet<Long>(Arrays.asList(sens.get(0).getId(), sens.get(1).getId()));
+        ids = new HashSet<>(Arrays.asList(sens.get(0).getId(), sens.get(1).getId()));
         when(senDao.getIdsForFeed(feedMail)).thenReturn(ids);
 
         // store ravaged feed
@@ -297,8 +297,8 @@ public class FeedDaoImplTest {
         // verify calls
         verify(subscriptionDao).remove(subscription.getId());
         verify(subscriptionDao).remove(sub.getId());
-        verify(senDao).removeSen(sens.get(0).getId());
-        verify(senDao).removeSen(sens.get(1).getId());
+        verify(senDao).removeSenFromFeed(sens.get(0).getId(), feedMail.getId());
+        verify(senDao).removeSenFromFeed(sens.get(1).getId(), feedMail.getId());
     }
 
     @Test
@@ -320,7 +320,7 @@ public class FeedDaoImplTest {
         Subscription subPoll = new Subscription(feedMail.getUri(), SubscriptionModeEnum.poll, URImail);
         sbscPoll.addSubscription(subPoll);
         subscriber.addSubscription(subscription);
-        Map<Subscriber, ScimEventNotification> pollSubscribers = new HashMap<Subscriber, ScimEventNotification>();
+        Map<Subscriber, ScimEventNotification> pollSubscribers = new HashMap<>();
         pollSubscribers.put(subscriber, null);
         pollSubscribers.put(sbscPoll, sens.get(3));
         feedMail.setPollSubscribersLastMsg(pollSubscribers);

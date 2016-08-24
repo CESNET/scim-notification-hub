@@ -76,24 +76,25 @@ public class ScimEventNotificationDaoImpl {
     }
 
     /**
-     * Remove Scim Event Notification in the storage.
-     * It is removed from all feeds.
+     * Remove Scim Event Notification from the specified feed in the storage.
+     * All relationship between feed and sen are removed.
+     * If there are other feeds containing this message, it is retained.
      * The other records in storage (schemas, attributes, resource uris) are removed by cascade mode in the storage.
      *
-     * @param senId of the scim event notification
+     * @param senId  of the scim event notification
+     * @param feedId where the message is
      */
-    public void removeSen(Long senId) {
+    public void removeSenFromFeed(Long senId, Long feedId) {
         if (senId == null) throw new NullPointerException("ScimEventNotification id cannot be null.");
+        if (feedId == null) throw new NullPointerException("ScimEventNotification id cannot be null.");
 
-        // remove feed uris
-        String SQL = "DELETE FROM scim_feed_sen WHERE sen_id=?";
-        jdbcTemplate.update(SQL, senId);
+        // remove sen-feed relationships
+        String SQL = "DELETE FROM scim_feed_sen WHERE feed_id=? AND sen_id=?";
+        jdbcTemplate.update(SQL, feedId, senId);
 
-        // remove sen row
-        SQL = "DELETE FROM " + TABLE_NAME + " WHERE id=?";
-        int rows = jdbcTemplate.update(SQL, senId);
-        if (rows > 1) throw new IllegalStateException("More than one subscriber removed.");
-        if (rows == 0) throw new IllegalStateException("No such subscriber.");
+        // remove sen only if it is not in other feed
+        SQL = "DELETE FROM scim_event_notification WHERE id=? AND NOT EXISTS (SELECT * FROM scim_feed_sen WHERE sen_id=?)";
+        jdbcTemplate.update(SQL, senId, senId);
     }
 
     /**

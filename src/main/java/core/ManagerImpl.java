@@ -4,6 +4,7 @@ import dao.FeedDao;
 import dao.SubscriberDao;
 import dao.SubscriptionDao;
 import org.codehaus.jackson.map.ObjectMapper;
+import rest.RestClientController;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -53,7 +54,7 @@ public class ManagerImpl implements Manager {
         // update feeds
         feedDao.updateIdentifiers(feeds);
         // classify the sen into right feeds
-        Set<Subscriber> subscribersToBeNotified = new HashSet<Subscriber>();
+        Set<String> urisToBeNotified = new HashSet<>();
         for (String feedUri : sen.getFeedUris()) {
             Feed feed = feeds.get(feedUri);
             if (feed == null) {
@@ -64,10 +65,18 @@ public class ManagerImpl implements Manager {
             } else {
                 feedDao.update(feed);
             }
+            Set<Subscriber> subscribersToBeNotified = new HashSet<>();
             subscribersToBeNotified.addAll(feed.newMsg(sen));
+            for (Subscriber subscriber : subscribersToBeNotified) {
+                for (Subscription subscription : subscriber.getSubscriptions()) {
+                    if (subscription.getFeedUri().equals(feed.getUri())) {
+                        urisToBeNotified.add(subscription.getEventUri());
+                    }
+                }
+            }
             feedDao.storeState(feed);
         }
-        webCallbackSend(subscribersToBeNotified, sen);
+        webCallbackSend(urisToBeNotified, sen);
     }
 
     @Override
@@ -101,9 +110,11 @@ public class ManagerImpl implements Manager {
             feed = new Feed(feedUri);
             feeds.put(feedUri, feed);
             feedDao.create(feed);
+        } else {
+            feedDao.update(feed);
         }
         feed.addSubscriber(subscriber);
-        subscriptionDao.create(subscription, subscriber, feed);
+        feedDao.storeState(feed);
     }
 
     @Override
@@ -160,6 +171,8 @@ public class ManagerImpl implements Manager {
             if (feed.getSubscribers().isEmpty()) {
                 feeds.remove(feed.getUri());
                 feedDao.remove(feed);
+            } else {
+                feedDao.storeState(feed);
             }
         }
         subscribers.remove(subscriber.getIdentifier());
@@ -171,6 +184,7 @@ public class ManagerImpl implements Manager {
     public Set<ScimEventNotification> poll(String subscriberIdentifier) {
         if (subscriberIdentifier == null) throw new IllegalArgumentException("Subscriber's identifier cannot be null.");
         subscriberDao.update(subscribers);
+        feedDao.updateIdentifiers(feeds);
         if (!subscribers.containsKey(subscriberIdentifier)) {
             throw new IllegalArgumentException("Subscriber with identifier " + subscriberIdentifier + " does not exists.");
         }
@@ -193,11 +207,20 @@ public class ManagerImpl implements Manager {
     /**
      * Call REST layer to inform the subscribers about the scim event.
      *
-     * @param subscribers to be informed about scim event
-     * @param sen         which defines the scim event
+     * @param eventUris to be informed about scim event
+     * @param sen       which defines the scim event
      */
-    public void webCallbackSend(Set<Subscriber> subscribers, ScimEventNotification sen) {
-        // TODO - initiate send of the sen message to all the subscribers
+    public void webCallbackSend(Set<String> eventUris, ScimEventNotification sen) {
+        RestClientController.webCallback(eventUris, sen);
     }
 
+    @Override
+    public Set<String> getSubscriberIdentifiers() {
+        return subscribers.keySet();
+    }
+
+    @Override
+    public Subscriber getSubscriberByIdentifier(String identifier) {
+        return subscribers.get(identifier);
+    }
 }

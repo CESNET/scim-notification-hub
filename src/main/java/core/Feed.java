@@ -36,9 +36,9 @@ public class Feed {
         if (uri == null) throw new NullPointerException("Uri cannot be null.");
         this.id = null;
         this.uri = uri;
-        this.messages = new LinkedList<ScimEventNotification>();
-        this.callbackSubscribers = new HashSet<Subscriber>();
-        this.pollSubscribersLastMsg = new HashMap<Subscriber, ScimEventNotification>();
+        this.messages = new LinkedList<>();
+        this.callbackSubscribers = new HashSet<>();
+        this.pollSubscribersLastMsg = new HashMap<>();
         this.slowestPollSubscriber = null;
     }
 
@@ -123,8 +123,10 @@ public class Feed {
         // filter the subscriber according to his notification mode
         if (subscription.getMode().equals(SubscriptionModeEnum.poll)) {
             // poll subscriber
-            this.pollSubscribersLastMsg.put(subscriber, messages.isEmpty() ? null : messages.get(0));
-            this.slowestPollSubscriber = subscriber;
+            this.pollSubscribersLastMsg.put(subscriber, messages.isEmpty() ? null : messages.getFirst());
+            if (slowestPollSubscriber == null) {
+                this.slowestPollSubscriber = subscriber;
+            }
         } else {
             // webCallback subscriber
             this.callbackSubscribers.add(subscriber);
@@ -186,7 +188,7 @@ public class Feed {
         if (!pollSubscribersLastMsg.containsKey(subscriber)) {
             throw new IllegalArgumentException("Subscriber " + subscriber.getIdentifier() + " is not subscribed to the feed " + uri);
         }
-        List<ScimEventNotification> msgsToSend = new ArrayList<ScimEventNotification>();
+        List<ScimEventNotification> msgsToSend = new ArrayList<>();
         if (subscriber.equals(slowestPollSubscriber)) {
             // slowest subscriber has not seen any of saved messages -> return all messages
             msgsToSend.addAll(messages);
@@ -226,14 +228,19 @@ public class Feed {
                 for (Map.Entry entry : pollSubscribersLastMsg.entrySet()) {
                     // iterate over all subscribers with last seen sen and set them null
                     if (entry.getValue().equals(sen)) {
-                        slowestPollSubscriber = (Subscriber) entry.getKey();
-                        pollSubscribersLastMsg.put(slowestPollSubscriber, null);
+                        Subscriber sbsc = (Subscriber) entry.getKey();
+                        pollSubscribersLastMsg.put(sbsc, null);
+                        slowestPollSubscriber = sbsc;
                     }
                 }
                 iter.remove();
                 return;
             }
             iter.remove();
+        }
+        if (!pollSubscribersLastMsg.isEmpty()) {
+            // if no message is left, assign anybody the slowest subscriber
+            slowestPollSubscriber = pollSubscribersLastMsg.keySet().iterator().next();
         }
     }
 
