@@ -1,7 +1,8 @@
 import config.SpringConfig;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.context.annotation.*;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 /**
@@ -13,6 +14,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @Configuration
 @Import(SpringConfig.class)
 @ComponentScan(basePackages = "rest")
+@PropertySource("file:/etc/scim-notification/web.properties")
 @EnableWebMvc
 public class WebAppConfig {
 

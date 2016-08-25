@@ -8,6 +8,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -23,6 +24,7 @@ import java.util.*;
  */
 @Named
 @Singleton
+@Transactional
 public class FeedDaoImpl implements FeedDao {
 
     private static final String TABLE_NAME = "scim_feed";
@@ -234,7 +236,7 @@ public class FeedDaoImpl implements FeedDao {
             Long nextMsgId;
             while (!senIds.isEmpty()) {
                 if (id == null) {
-                  id = senIds.iterator().next();
+                    id = senIds.iterator().next();
                 }
                 try {
                     nextMsgId = jdbcTemplate.queryForObject(SQL, Long.class, id, feedId);

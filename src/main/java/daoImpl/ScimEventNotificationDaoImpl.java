@@ -6,6 +6,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -27,6 +28,7 @@ import java.util.Set;
  */
 @Named
 @Singleton
+@Transactional
 public class ScimEventNotificationDaoImpl {
 
     private static final String TABLE_NAME = "scim_event_notification";

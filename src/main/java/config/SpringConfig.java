@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -17,7 +18,7 @@ import javax.sql.DataSource;
  */
 @Configuration
 @EnableTransactionManagement
-@PropertySource("classpath:dataSource.properties")
+@PropertySource("file:/etc/scim-notification/dataSource.properties")
 @ComponentScan(basePackages = {
         "core",
         "daoImpl"
@@ -42,9 +43,9 @@ public class SpringConfig {
         return new JdbcTemplate(dataSource());
     }
 
-//    @Bean
-//    public DataSourceTransactionManager transactionManager() {
-//        return new DataSourceTransactionManager(dataSource());
-//    }
+    @Bean
+    public DataSourceTransactionManager transactionManager() {
+        return new DataSourceTransactionManager(dataSource());
+    }
 
 }

@@ -5,6 +5,7 @@ import dao.SubscriptionDao;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -23,6 +24,7 @@ import java.util.Set;
  */
 @Named
 @Singleton
+@Transactional
 public class SubscriptionDaoImpl implements SubscriptionDao {
 
     static final String TABLE_NAME = "scim_subscription";

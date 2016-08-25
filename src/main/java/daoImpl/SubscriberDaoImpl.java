@@ -6,6 +6,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -22,6 +23,7 @@ import java.util.*;
  */
 @Named
 @Singleton
+@Transactional
 public class SubscriberDaoImpl implements SubscriberDao {
 
     private static final String TABLE_NAME = "scim_subscriber";

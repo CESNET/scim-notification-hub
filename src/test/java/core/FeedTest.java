@@ -1,7 +1,6 @@
 package core;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.StringUtils;
@@ -12,6 +11,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import static org.junit.Assert.*;
 
 /**
  * Test for the fundamental class Feed.

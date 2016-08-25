@@ -1,7 +1,8 @@
 {
-  "schemas":
-  ["urn:ietf:params:scim:schemas:notify:2.0:Subscription"],
-  "feedUri":"https://example.com/v2/Feeds/548b7c3f77c8bab33a4fef40",
-  "mode":"urn:ietf:params:scimnotify:api:messages:2.0:webCallback",
-  "eventUri":"https://subscriber.com/Events",
+  "schemas": [
+    "urn:ietf:params:scim:schemas:notify:2.0:Subscription"
+  ],
+  "feedUri": "https://example.com/v2/Feeds/548b7c3f77c8bab33a4fef40",
+  "mode": "urn:ietf:params:scimnotify:api:messages:2.0:webCallback",
+  "eventUri": "https://subscriber.com/Events",
 }
