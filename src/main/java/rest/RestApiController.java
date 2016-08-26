@@ -106,7 +106,7 @@ public class RestApiController {
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
-        String response = "Location: \n" + env.getProperty("webProperties.hostName") + "/Subscriptions/" + sbscId;
+        String response = "Location: \n" + env.getProperty("webProperties.hostName") + "/Subscriptions/" + sbscId + "\n" + body;
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -137,10 +137,10 @@ public class RestApiController {
      * Create a new scim event notification.
      *
      * @param senJson scim event notification according to the schema 'urn:ietf:params:scim:schemas:notify:2.0:Event'
-     * @return status 204
+     * @return status 204 or status 400 if the event json is not valid
      */
     @RequestMapping(value = "/Events", method = POST)
-    public ResponseEntity<?> createSubscriber(@RequestBody String senJson) {
+    public ResponseEntity<?> createScimEvent(@RequestBody String senJson) {
         try {
             manager.newMessage(senJson);
         } catch (IllegalArgumentException e) {
