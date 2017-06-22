@@ -42,6 +42,11 @@ Perform poll of the messages for the specified subscription.
 - Returns:
 status 200
 
+## Feeds
+- feed is a queue of events, which waits until all subscribers receive all events before deleting them
+- there is no need to explicitly create a feed becase it will be implicitly created when posting event to a new feed or subscribing to a new feed
+- Perun feed terminology is following: https://perun-dev.meta.zcu.cz/scim-notification/feed/[id of facility]/[id of service]
+
 ## Example Subscription
 - modes available:
   * urn:ietf:params:scimnotify:api:messages:2.0:poll
