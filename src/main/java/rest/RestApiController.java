@@ -61,6 +61,9 @@ public class RestApiController {
     @RequestMapping(value = "/Subscriptions/{sbscId}", method = GET)
     public ResponseEntity<Subscription> getSubscription(@PathVariable("sbscId") String sbscId) {
         Subscriber subscriber = manager.getSubscriberByIdentifier(sbscId);
+        if (subscriber == null || subscriber.getSubscriptions() == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
         if (subscriber.getSubscriptions().isEmpty()) {
             manager.removeSubscriber(subscriber.getIdentifier());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
