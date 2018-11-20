@@ -1,8 +1,8 @@
 package rest;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import core.*;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

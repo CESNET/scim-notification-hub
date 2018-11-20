@@ -1,9 +1,9 @@
 package integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import core.ManagerImpl;
 import core.ScimEventNotification;
 import core.SubscriptionModeEnum;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

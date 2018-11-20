@@ -1,10 +1,10 @@
 package daoImpl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import core.Feed;
 import core.ScimEventNotification;
 import core.Subscriber;
 import core.Subscription;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 

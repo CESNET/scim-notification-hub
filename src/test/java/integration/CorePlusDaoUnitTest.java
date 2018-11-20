@@ -1,7 +1,7 @@
 package integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import core.*;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

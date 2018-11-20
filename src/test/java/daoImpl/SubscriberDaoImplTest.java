@@ -1,8 +1,8 @@
 package daoImpl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import core.*;
 import dao.SubscriberDao;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

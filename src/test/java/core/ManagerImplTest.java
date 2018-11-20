@@ -1,9 +1,9 @@
 package core;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dao.FeedDao;
 import dao.SubscriberDao;
 import dao.SubscriptionDao;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

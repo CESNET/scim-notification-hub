@@ -1,9 +1,9 @@
 package core;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dao.FeedDao;
 import dao.SubscriberDao;
 import dao.SubscriptionDao;
-import org.codehaus.jackson.map.ObjectMapper;
 import rest.RestClientController;
 
 import javax.inject.Inject;
